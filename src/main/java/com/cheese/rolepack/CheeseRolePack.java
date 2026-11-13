@@ -26,6 +26,10 @@ public class CheeseRolePack implements ModInitializer {
         // 职业 / 技能 / 商店 / 空手左键事件
         GreenRole.register();
 
+        // 可调配置（config/cheeserolepack.json）+ 游戏内调整命令 /cheeserolepack knockback <值>
+        com.cheese.rolepack.config.GreenConfig.load();
+        com.cheese.rolepack.config.GreenConfig.registerCommand();
+
         LOGGER.info("CheeseRolePack 初始化完成，职业 id = {}", GreenRole.ID);
     }
 }

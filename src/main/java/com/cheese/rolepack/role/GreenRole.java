@@ -431,8 +431,16 @@ public class GreenRole extends NormalRole {
             victim.hurt(attacker.damageSources().playerAttack(attacker), safeDamage);
         } else {
             // 目标已经只剩 1 血：不再造成伤害，但仍给一次原版手感的击退
-            victim.knockback(VANILLA_PUNCH_KNOCKBACK,
-                    attacker.getX() - victim.getX(),
+            victim.knockback(VANILLA_PUNCH_KNOCKBACK, attacker.getX() - victim.getX(),
+                    attacker.getZ() - victim.getZ());
+        }
+
+        // ———— 可调的额外击退（config/cheeserolepack.json 或 /cheeserolepack knockback <值>）————
+        // 注意：上面 hurt() 产生的 0.4F 是原版击退，外部无法调小；这里的配置值是「额外附加」的推力，
+        // 默认 0.0 即完全等于原版手感，调大才会推得更远。
+        double extraKnockback = com.cheese.rolepack.config.GreenConfig.punchExtraKnockback();
+        if (extraKnockback > 0.0D) {
+            victim.knockback(extraKnockback, attacker.getX() - victim.getX(),
                     attacker.getZ() - victim.getZ());
         }
 
