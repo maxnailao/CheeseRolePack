@@ -22,7 +22,7 @@
   ],
   "depends": {
     "minecraft": "~1.21.1",
-    "fabricloader": ">=0.19.3",
+    "fabricloader": ">=0.19.2",
     "fabric-api": "*",
     "starrailexpress": ">=4.3.0",
     "sre_resource": ">=1.0.3"

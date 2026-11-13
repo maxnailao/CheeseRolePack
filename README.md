@@ -8,7 +8,7 @@ StarRailExpress 的附加职业包（Fabric / Minecraft 1.21.1）。
 |---|---|---|
 | StarRailExpress | 4.3.0 | 本体 |
 | sre_resource（`sre-lib`） | 1.0.3 | 资源库 |
-| Fabric Loader | ≥ 0.19.3 | |
+| Fabric Loader | ≥ 0.19.2 | |
 | Fabric API | 0.116.13+1.21.1 | |
 | Cardinal Components API | 6.1.1 | SRE 的组件依赖 |
 
