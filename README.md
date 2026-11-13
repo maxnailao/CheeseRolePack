@@ -45,18 +45,3 @@ libs/wathe-1.3.2.jar                   # 空壳 jar，仅为编译 ShopEntry
 simple-voice-chat、architectury、exposure、ratatouille、veil、midnightlib、
 ForgeConfigAPIPort、datasync 等），详见 `runtime_mods/README.md`。
 
-## 已实现职业
-
-### 格林（`cheeserolepack:green`）— 平民阵营
-
-> 爱丽丝....在哪里..
-
-| 机制 | 说明 |
-|---|---|
-| 开局物品 | 书与笔，死亡后掉落 |
-| 技能（SAN > 70，全局每局限一次） | 所有玩家回到各自房间；所有「SAN 可被减少」的职业 `-50` SAN。表现与 486 修饰符触发一致（COD 字幕 + 回放事件 + 2 秒时停），文案不同 |
-| SAN < 30 空手左键 | 伤害恒为 0（整次取消原版攻击，因此不会产生任何死亡事件），只施加一次原版手感（0.4F）的击退 |
-| 商店 | 癫狂 150g：购买后 SAN 直接归零（图标用拳套 `boxing_glove`） |
-
-「SAN 可被减少」的判定为 `role.getMoodType() == SRERole.MoodType.REAL`
-—— SRE 的 `SREPlayerMoodComponent` 只对 REAL 心情职业读写真实 SAN。
