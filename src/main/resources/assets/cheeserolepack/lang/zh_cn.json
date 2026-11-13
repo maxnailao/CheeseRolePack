@@ -14,5 +14,6 @@
   "message.cheeserolepack.green.trigger.title": "格林使用了全场回溯",
   "message.cheeserolepack.green.trigger.subtitle": "全场返回房间",
   "message.cheeserolepack.green.trigger.text": "%s 让所有人回到了自己的房间",
-  "message.cheeserolepack.green.trigger.time_stop": "格林使用了全场回溯"
+  "message.cheeserolepack.green.trigger.time_stop": "格林使用了全场回溯",
+  "message.cheeserolepack.green.punch_combo": "连击 %s"
 }

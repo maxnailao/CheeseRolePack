@@ -15,5 +15,6 @@
   "message.cheeserolepack.green.trigger.subtitle": "Everyone returns to their room",
   "message.cheeserolepack.green.trigger.text": "%s sent everyone back to their rooms",
   "message.cheeserolepack.green.trigger.time_stop": "Time Rewind",
-  "message.cheeserolepack.green.punch_no_kill": "That punch would kill, so you held back"
+  "message.cheeserolepack.green.punch_no_kill": "That punch would kill, so you held back",
+  "message.cheeserolepack.green.punch_combo": "Punch combo %s"
 }

@@ -37,6 +37,7 @@ import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 格林（Green）—— 平民阵营职业。
@@ -98,6 +99,15 @@ public class GreenRole extends NormalRole {
      * 所以手感与原版空手打人一致。注意不要调大，否则就不是「原版击退」了。
      */
     private static final double VANILLA_PUNCH_KNOCKBACK = 0.4D;
+
+    /** 每拳固定伤害，取值与红美铃一致（1.0），实际结算时会夹到「最多打到 1 血」。 */
+    private static final float PUNCH_DAMAGE = 1.0F;
+
+    /** 连击提示的上限，纯展示用（红美铃是第 3 拳击杀，格林到 3 只显示满，不击杀）。 */
+    private static final int PUNCH_COMBO_MAX = 3;
+
+    /** 连击记录：攻击者 UUID → 当前连击状态（换目标重置），对应红美铃的 {@code PUNCH_RECORDS}。 */
+    private static final java.util.Map<java.util.UUID, PunchRecord> PUNCH_RECORDS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** 两次空手左键之间的冷却（tick），沿用红美铃 / 骷髅用屏障物品当通用冷却的写法。 */
     private static final int PUNCH_COOLDOWN_TICKS = 10;
@@ -271,7 +281,7 @@ public class GreenRole extends NormalRole {
         // 全局每局限一次：把次数扣光并同步给客户端 HUD（1 → 0）
         data.consumeUse();
 
-        // ———— 表现层：与 486 修饰符触发时一致（COD 字幕 + 回放事件 + 2 秒时停），仅文案不同 ————
+        // ———— 表现层：与 486 修饰符触发时一致（COD 字幕 + 回放事件），仅文案不同；不含时停 ————
         // 参考 org/agmas/noellesroles/modifier/AnimeModifiers.java 的 RE0_486 触发分支。
         io.wifi.starrailexpress.util.SRENetworkMessageUtils.sendCODSubtitleToAll(
                 Component.translatable("message.cheeserolepack.green.trigger.title")
@@ -283,9 +293,7 @@ public class GreenRole extends NormalRole {
                         io.wifi.starrailexpress.api.replay.GameReplayUtils.getReplayPlayerDisplayText(player, true))
                         .withStyle(ChatFormatting.YELLOW),
                 false);
-        // 时停 2 秒，让其像「时间回溯」——和 486 一样的时长
-        org.agmas.noellesroles.content.effects.TimeStopEffect.tryTriggerStart(player, 20 * 2,
-                Component.translatable("message.cheeserolepack.green.trigger.time_stop"));
+        // 说明：这里**不再**触发 TimeStopEffect，即去掉「时停 2 秒」那段广播。
 
         Component message = Component.translatable("message.cheeserolepack.green.used", moved, drained);
         level.players().forEach(p -> sendActionBar(p, message));
@@ -408,24 +416,49 @@ public class GreenRole extends NormalRole {
             return InteractionResult.SUCCESS_NO_ITEM_USED; // 自己的出拳冷却中：静默取消
         }
 
-        // ———— 伤害恒为 0：整次取消原版攻击 ————
-        // 返回非 PASS 会让 Fabric 在 ServerPlayer#attack 的 HEAD 直接 CallbackInfo.cancel()，
-        // 于是原版攻击完全不执行 —— 不产生伤害，也就绝不可能产生任何死亡事件
-        // （包括红美铃那种「被拳头打死」的死亡归属，以及由此可能引发的 bug）。
+        // ———— 仿照红美铃（HoanMeirinFistPunchHandler）的出拳 ————
+        // 红美铃的三要素：①10 tick 冷却；②每拳固定 1.0 伤害；③连击计数提示 [N/3]，第 3 拳强制击杀。
+        // 格林只仿前两项 + 计数提示，**第 3 拳不击杀**，因此绝不会产生任何死亡事件。
         attacker.getCooldowns().addCooldown(Items.BARRIER, PUNCH_COOLDOWN_TICKS);
 
-        // ———— 击退：用原版近战击退的参数，手感等同原版空手打人 ————
-        // 两个细节：
-        // 1) 力度用 0.4（LivingEntity#hurt 对普通近战就是这么调的）；
-        // 2) knockback 内部是 `motion - normalize(x,z) * strength`，所以传入的 (x,z) 必须是
-        //    「从目标指向攻击者」的方向，目标才会被推离攻击者；传反了会把人往怀里拉。
-        // 另外 knockback 自己会置 hurtMarked，无需再手动设置。
-        victim.knockback(VANILLA_PUNCH_KNOCKBACK,
-                attacker.getX() - victim.getX(),
-                attacker.getZ() - victim.getZ());
+        // 连击记录：换目标就从 1 重新数（与红美铃一致）
+        PunchRecord record = PUNCH_RECORDS.computeIfAbsent(attacker.getUUID(), k -> new PunchRecord());
+        if (!victim.getUUID().equals(record.targetUUID)) {
+            record.targetUUID = victim.getUUID();
+            record.count = 0;
+        }
+        record.count++;
 
-        sendActionBar(attacker, Component.translatable("message.cheeserolepack.green.punch"));
+        // 每拳固定 1.0 伤害（红美铃的数值），但**夹到最多只打到 1 血**：
+        // 这样既保留了红美铃那种「一拳一点血」的手感，又不可能打出致死一击，
+        // 因而不会触发 die() / 死亡归属 / 任何死亡事件。
+        float safeDamage = Math.min(PUNCH_DAMAGE, Math.max(0.0F, victim.getHealth() - 1.0F));
+        if (safeDamage > 0.0F) {
+            // hurt() 自己会处理伤害结算、命中音效与击退（原版近战击退 0.4F），无需另行施加
+            victim.hurt(attacker.damageSources().playerAttack(attacker), safeDamage);
+        } else {
+            // 目标已经只剩 1 血：不再造成伤害，但仍给一次原版手感的击退
+            victim.knockback(VANILLA_PUNCH_KNOCKBACK,
+                    attacker.getX() - victim.getX(),
+                    attacker.getZ() - victim.getZ());
+        }
+
+        // 连击提示：仿红美铃的 [N/3] 显示；到 3 之后不再有击杀，只是继续显示满 3
+        int shown = Math.min(record.count, PUNCH_COMBO_MAX);
+        ChatFormatting color = shown >= PUNCH_COMBO_MAX ? ChatFormatting.RED
+                : (shown == PUNCH_COMBO_MAX - 1 ? ChatFormatting.YELLOW : ChatFormatting.GREEN);
+        sendActionBar(attacker, Component.translatable("message.cheeserolepack.green.punch_combo",
+                Component.translatable("[%s/%s]", shown, PUNCH_COMBO_MAX).withStyle(ChatFormatting.WHITE))
+                .withStyle(color));
+
+        // 取消原版攻击：伤害已由上面的 hurt(1.0, 夹到 1 血) 结算，不走原版属性伤害
         return InteractionResult.SUCCESS_NO_ITEM_USED;
+    }
+
+    /** 单个攻击者的连击状态（换目标重置），对应红美铃的 {@code PunchRecord}。 */
+    private static final class PunchRecord {
+        private UUID targetUUID;
+        private int count;
     }
 
     // ==================== ④ 商店：「癫狂」 ====================
