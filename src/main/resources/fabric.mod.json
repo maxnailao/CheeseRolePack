@@ -17,6 +17,9 @@
       "com.cheese.rolepack.client.CheeseRolePackClient"
     ]
   },
+  "mixins": [
+    "cheeserolepack.mixins.json"
+  ],
   "depends": {
     "minecraft": "~1.21.1",
     "fabricloader": ">=0.19.3",

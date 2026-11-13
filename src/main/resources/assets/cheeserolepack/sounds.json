@@ -1,0 +1,10 @@
+{
+  "rpg7_shoot": {
+    "sounds": [
+      {
+        "name": "cheeserolepack:rpg7_shoot",
+        "stream": false
+      }
+    ]
+  }
+}

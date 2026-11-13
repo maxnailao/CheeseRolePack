@@ -15,6 +15,12 @@
   "message.cheeserolepack.green.trigger.subtitle": "Everyone returns to their room",
   "message.cheeserolepack.green.trigger.text": "%s sent everyone back to their rooms",
   "message.cheeserolepack.green.trigger.time_stop": "Time Rewind",
-  "message.cheeserolepack.green.punch_no_kill": "That punch would kill, so you held back",
-  "hud.cheeserolepack.green.key_unknown": "skill key"
+  "hud.cheeserolepack.green.key_unknown": "skill key",
+  "item.cheeserolepack.rpg7": "RPG-7 Rocket Launcher",
+  "item.cheeserolepack.rpg7.tooltip": "Right-click to fire, left-click to load\nStarts empty, shows the rocket when loaded\nRocket drops over distance and explodes on impact",
+  "item.cheeserolepack.rpg7.ammo": "Ammo: %s/%s",
+  "item.cheeserolepack.rpg7_ammo": "RPG-7 Rocket",
+  "message.cheeserolepack.rpg7.empty": "No rocket loaded",
+  "death_reason.cheeserolepack.rpg_explosion": "RPG explosion",
+  "itemGroup.cheeserolepack.cheese_role": "CheeseRole"
 }

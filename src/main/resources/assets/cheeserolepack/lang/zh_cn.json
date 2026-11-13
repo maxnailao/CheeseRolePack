@@ -15,5 +15,12 @@
   "message.cheeserolepack.green.trigger.subtitle": "全场返回房间",
   "message.cheeserolepack.green.trigger.text": "%s 让所有人回到了自己的房间",
   "message.cheeserolepack.green.trigger.time_stop": "格林使用了全场回溯",
-  "hud.cheeserolepack.green.key_unknown": "技能键"
+  "hud.cheeserolepack.green.key_unknown": "技能键",
+  "item.cheeserolepack.rpg7": "RPG-7 火箭筒",
+  "item.cheeserolepack.rpg7.tooltip": "右键发射火箭弹，左键装填\n初始无弹药，装填后显示炮弹\n火箭弹飞行带下坠，命中后爆炸",
+  "item.cheeserolepack.rpg7.ammo": "弹药：%s/%s",
+  "item.cheeserolepack.rpg7_ammo": "RPG-7 火箭弹",
+  "message.cheeserolepack.rpg7.empty": "火箭弹已空",
+  "death_reason.cheeserolepack.rpg_explosion": "火箭弹爆炸",
+  "itemGroup.cheeserolepack.cheese_role": "CheeseRole"
 }
