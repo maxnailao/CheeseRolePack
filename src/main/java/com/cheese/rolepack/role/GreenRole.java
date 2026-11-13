@@ -275,7 +275,7 @@ public class GreenRole extends NormalRole {
         // 全局每局限一次：把次数扣光并同步给客户端 HUD（1 → 0）
         data.consumeUse();
 
-        // ———— 表现层：与 486 修饰符触发时一致（COD 字幕 + 回放事件），仅文案不同；不含时停 ————
+        // ———— 表现层：与 486 修饰符触发时一致（COD 字幕 + 回放事件 + 2 秒时停），仅文案不同 ————
         // 参考 org/agmas/noellesroles/modifier/AnimeModifiers.java 的 RE0_486 触发分支。
         io.wifi.starrailexpress.util.SRENetworkMessageUtils.sendCODSubtitleToAll(
                 Component.translatable("message.cheeserolepack.green.trigger.title")
@@ -287,7 +287,14 @@ public class GreenRole extends NormalRole {
                         io.wifi.starrailexpress.api.replay.GameReplayUtils.getReplayPlayerDisplayText(player, true))
                         .withStyle(ChatFormatting.YELLOW),
                 false);
-        // 说明：这里**不再**触发 TimeStopEffect，即去掉「时停 2 秒」那段广播。
+
+        // ———— 时停 2 秒：保留效果，只是**不广播文字** ————
+        // 486 用 tryTriggerStart(player, 20 * 2, 文案) 做「时间回溯」的观感。这里保留同样的
+        // 20 * 2 tick 时停（含 TIME_STOP 状态条、音效、游戏时间推进等全部效果），
+        // 只把 displaySkillTitle 换成 Component.empty()：
+        // TimeStopEffect#triggerStart 里那句 BroadcastCommand.BroadcastMessage(player, title)
+        // 于是发出的是一条空文本，屏幕上不会出现任何提示文字。
+        org.agmas.noellesroles.content.effects.TimeStopEffect.tryTriggerStart(player, 20 * 2, Component.empty());
 
         Component message = Component.translatable("message.cheeserolepack.green.used", moved, drained);
         level.players().forEach(p -> sendActionBar(p, message));
