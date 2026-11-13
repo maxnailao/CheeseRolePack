@@ -37,7 +37,6 @@ import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 格林（Green）—— 平民阵营职业。
@@ -103,11 +102,6 @@ public class GreenRole extends NormalRole {
     /** 每拳固定伤害，取值与红美铃一致（1.0），实际结算时会夹到「最多打到 1 血」。 */
     private static final float PUNCH_DAMAGE = 1.0F;
 
-    /** 连击提示的上限，纯展示用（红美铃是第 3 拳击杀，格林到 3 只显示满，不击杀）。 */
-    private static final int PUNCH_COMBO_MAX = 3;
-
-    /** 连击记录：攻击者 UUID → 当前连击状态（换目标重置），对应红美铃的 {@code PUNCH_RECORDS}。 */
-    private static final java.util.Map<java.util.UUID, PunchRecord> PUNCH_RECORDS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** 两次空手左键之间的冷却（tick），沿用红美铃 / 骷髅用屏障物品当通用冷却的写法。 */
     private static final int PUNCH_COOLDOWN_TICKS = 10;
@@ -417,17 +411,9 @@ public class GreenRole extends NormalRole {
         }
 
         // ———— 仿照红美铃（HoanMeirinFistPunchHandler）的出拳 ————
-        // 红美铃的三要素：①10 tick 冷却；②每拳固定 1.0 伤害；③连击计数提示 [N/3]，第 3 拳强制击杀。
-        // 格林只仿前两项 + 计数提示，**第 3 拳不击杀**，因此绝不会产生任何死亡事件。
+        // 沿用红美铃的 10 tick 冷却与「每拳固定 1.0 伤害」的手感，
+        // 但因为格林打不死人，红美铃那套「连击计数 [N/3] → 第 3 拳击杀」没有意义，已整体去掉。
         attacker.getCooldowns().addCooldown(Items.BARRIER, PUNCH_COOLDOWN_TICKS);
-
-        // 连击记录：换目标就从 1 重新数（与红美铃一致）
-        PunchRecord record = PUNCH_RECORDS.computeIfAbsent(attacker.getUUID(), k -> new PunchRecord());
-        if (!victim.getUUID().equals(record.targetUUID)) {
-            record.targetUUID = victim.getUUID();
-            record.count = 0;
-        }
-        record.count++;
 
         // 每拳固定 1.0 伤害（红美铃的数值），但**夹到最多只打到 1 血**：
         // 这样既保留了红美铃那种「一拳一点血」的手感，又不可能打出致死一击，
@@ -443,22 +429,8 @@ public class GreenRole extends NormalRole {
                     attacker.getZ() - victim.getZ());
         }
 
-        // 连击提示：仿红美铃的 [N/3] 显示；到 3 之后不再有击杀，只是继续显示满 3
-        int shown = Math.min(record.count, PUNCH_COMBO_MAX);
-        ChatFormatting color = shown >= PUNCH_COMBO_MAX ? ChatFormatting.RED
-                : (shown == PUNCH_COMBO_MAX - 1 ? ChatFormatting.YELLOW : ChatFormatting.GREEN);
-        sendActionBar(attacker, Component.translatable("message.cheeserolepack.green.punch_combo",
-                Component.translatable("[%s/%s]", shown, PUNCH_COMBO_MAX).withStyle(ChatFormatting.WHITE))
-                .withStyle(color));
-
         // 取消原版攻击：伤害已由上面的 hurt(1.0, 夹到 1 血) 结算，不走原版属性伤害
         return InteractionResult.SUCCESS_NO_ITEM_USED;
-    }
-
-    /** 单个攻击者的连击状态（换目标重置），对应红美铃的 {@code PunchRecord}。 */
-    private static final class PunchRecord {
-        private UUID targetUUID;
-        private int count;
     }
 
     // ==================== ④ 商店：「癫狂」 ====================
