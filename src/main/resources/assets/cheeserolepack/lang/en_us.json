@@ -1,0 +1,19 @@
+{
+  "announcement.star.role.green": "Green",
+  "announcement.star.goals.green": "Alice... where are you..",
+  "info.screen.roleid.green": "Civilian\nAlice... where are you..\n\nSkill - Return Everyone to Rooms: usable while your SAN is above 70, once per round for the whole lobby.\nTeleports every player back to their own room and makes every role whose SAN can be reduced lose 50 SAN.\n\nWhile your SAN is below 30, a bare-handed left click knocks the target back but never deals any damage.\n\nYou spawn with a book and quill; it is dropped on the ground when you die.\n\nShop: Mania (150 coins) - instantly sets your own SAN to 0.",
+  "info.screen.roleid.green.simple": "Civilian\nSkill: Return Everyone to Rooms (SAN above 70, once per round)\nBare-handed left click below 30 SAN knocks targets back but never kills\nSpawns with a book and quill, dropped on death\nShop: Mania, 150 coins, sets your SAN to 0",
+  "skill.cheeserolepack.green.return_rooms": "Return Everyone to Rooms",
+  "hud.cheeserolepack.green.returns_left": "Press X to return everyone to rooms (uses left: %s)",
+  "shop.cheeserolepack.mania": "Mania",
+  "message.cheeserolepack.green.no_uses": "Return Everyone to Rooms has already been used this round",
+  "message.cheeserolepack.green.san_too_low": "Your SAN is not above 70, Return Everyone to Rooms is unavailable",
+  "message.cheeserolepack.green.used": "Green used Return Everyone to Rooms: %s players were sent back to their rooms, %s unstable minds each lost 50 SAN",
+  "message.cheeserolepack.green.punch": "A bare-knuckle shove",
+  "message.cheeserolepack.green.mania": "Mania: your sanity is torn apart...",
+  "message.cheeserolepack.green.trigger.title": "Alice... where are you..",
+  "message.cheeserolepack.green.trigger.subtitle": "Everyone returns to their room",
+  "message.cheeserolepack.green.trigger.text": "%s sent everyone back to their rooms",
+  "message.cheeserolepack.green.trigger.time_stop": "Time Rewind",
+  "message.cheeserolepack.green.punch_no_kill": "That punch would kill, so you held back"
+}

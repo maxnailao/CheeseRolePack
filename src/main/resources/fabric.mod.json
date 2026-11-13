@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "cheeserolepack",
+  "version": "${version}",
+  "name": "CheeseRolePack",
+  "description": "StarRailExpress 附加职业包：格林（平民阵营）",
+  "authors": [
+    "Cheese"
+  ],
+  "license": "GPL-3.0-only",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.cheese.rolepack.CheeseRolePack"
+    ],
+    "client": [
+      "com.cheese.rolepack.client.CheeseRolePackClient"
+    ]
+  },
+  "depends": {
+    "minecraft": "~1.21.1",
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
+    "starrailexpress": ">=4.3.0",
+    "sre_resource": ">=1.0.3"
+  }
+}
