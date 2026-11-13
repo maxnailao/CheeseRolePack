@@ -4,7 +4,7 @@
   "info.screen.roleid.green": "平民阵营\n爱丽丝....你在哪里..\n\n技能 - 全场返回房间：SAN 高于 70 时可用，全场每局限一次。\n把所有玩家传送回各自的房间，并让所有心智可被动摇的职业减少 50 点 SAN。\n\nSAN 低于 30 时，空手左键可以把对手击退，但绝不会造成任何伤害。\n\n开局自带书与笔，死亡时书与笔会掉落在原地。\n\n商店：癫狂（150 金币）—— 购买后立刻把自己的 SAN 归零。",
   "info.screen.roleid.green.simple": "平民阵营\n技能：全场返回房间（SAN 高于 70，每局限一次）\nSAN 低于 30 时空手左键可击退，但绝不致死\n开局自带书与笔，死亡时掉落\n商店：癫狂 150 金币，购买后 SAN 归零",
   "skill.cheeserolepack.green.return_rooms": "全场返回房间",
-  "hud.cheeserolepack.green.returns_left": "按X让所有人返回房间(剩余次数:%s)",
+  "hud.cheeserolepack.green.returns_left": "按 %s 让所有人返回房间(剩余次数:%s)",
   "shop.cheeserolepack.mania": "癫狂",
   "message.cheeserolepack.green.no_uses": "全场返回房间本局已经用过了",
   "message.cheeserolepack.green.san_too_low": "SAN 不足 70，无法使用全场返回房间",
@@ -14,5 +14,6 @@
   "message.cheeserolepack.green.trigger.title": "格林使用了全场回溯",
   "message.cheeserolepack.green.trigger.subtitle": "全场返回房间",
   "message.cheeserolepack.green.trigger.text": "%s 让所有人回到了自己的房间",
-  "message.cheeserolepack.green.trigger.time_stop": "格林使用了全场回溯"
+  "message.cheeserolepack.green.trigger.time_stop": "格林使用了全场回溯",
+  "hud.cheeserolepack.green.key_unknown": "技能键"
 }
