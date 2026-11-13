@@ -62,6 +62,3 @@ ForgeConfigAPIPort、datasync 等），详见 `runtime_mods/README.md`。
 —— SRE 的 `SREPlayerMoodComponent` 只对 REAL 心情职业读写真实 SAN。
 
 ## 注意
-
-- 请勿提交 `run/`（世界存档 1.4GB）与 `build/`，已在 `.gitignore` 中排除。
-- 版本号请手动修改，不要用工具自动递增。
