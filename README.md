@@ -60,5 +60,3 @@ ForgeConfigAPIPort、datasync 等），详见 `runtime_mods/README.md`。
 
 「SAN 可被减少」的判定为 `role.getMoodType() == SRERole.MoodType.REAL`
 —— SRE 的 `SREPlayerMoodComponent` 只对 REAL 心情职业读写真实 SAN。
-
-## 注意
