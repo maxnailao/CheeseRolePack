@@ -37,6 +37,9 @@ import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 格林（Green）—— 平民阵营职业。
@@ -128,6 +131,72 @@ public class GreenRole extends NormalRole {
     /**
      * 注册职业、技能、商店与事件（在 {@code CheeseRolePack#onInitialize()} 里调用一次）。
      */
+    /**
+     * 本局「已经死过」的玩家 UUID 集合。
+     *
+     * <p>由 {@code OnPlayerDeath} 事件写入、每局开局清空。用途见 {@link #isEligibleForSkill}。</p>
+     */
+    private static final Set<UUID> DEAD_PLAYERS = ConcurrentHashMap.newKeySet();
+
+    /**
+     * 玩家被复活时调用（由 {@code GameUtilsReviveMixin} 在 SRE 的两条复活方法入口处触发）。
+     *
+     * <p>把它从「本局已死亡名单」里移出，于是格林之后的技能会重新作用于他。</p>
+     */
+    public static void markRevived(Player player) {
+        if (player != null) {
+            DEAD_PLAYERS.remove(player.getUUID());
+        }
+    }
+
+    /** 注册死亡 / 开局监听，维护「本局已死亡玩家」名单。 */
+    private static void registerDeathTracking() {
+        io.wifi.starrailexpress.event.OnPlayerDeath.EVENT.register((player, deathReason) -> {
+            if (player != null) {
+                DEAD_PLAYERS.add(player.getUUID());
+            }
+        });
+        // 每局开始时名单必然为空（还没有人死），直接清空即可
+        io.wifi.starrailexpress.event.OnGameStarted.EVENT.register(level -> DEAD_PLAYERS.clear());
+        io.wifi.starrailexpress.event.OnGameTrueStarted.EVENT.register(level -> DEAD_PLAYERS.clear());
+    }
+
+    /**
+     * 判断某个玩家是否「仍在局内」，以决定技能要不要作用于他。
+     *
+     * <p><b>为什么需要这个判定</b>：服务器有训练场机制 —— 玩家死亡后可以输入指令进入训练场，
+     * 进入后会被切换成<b>冒险模式</b>（不再是旁观），但仍然算「已死亡」。
+     * 如果技能只按 {@code level.players()} 全量传送，这些在训练场的亡者就会被拉回局内房间，
+     * 表现为「被复活」。</p>
+     *
+     * <p>因此分三层判定，任一层不满足就跳过：</p>
+     * <ol>
+     *   <li>本局死亡名单 {@link #DEAD_PLAYERS} —— 训练场里的亡者在这一层就被拦下；</li>
+     *   <li>实体自身状态：已死亡 / 濒死 / 已移除 / 旁观 / 创造；</li>
+     *   <li>SRE 的权威存活判定 {@code GameUtils#isPlayerAliveAndSurvival}
+     *       （会考虑难民、幽灵等修饰符带来的状态变化）。</li>
+     * </ol>
+     *
+     * <p><b>已知取舍</b>：玩家若在本局中途被复活（例如 486 修饰符的复活），
+     * 他仍留在死亡名单里，因此本次技能不会再传送他 —— 下一局开局名单清空后恢复正常。
+     * 这里选择「宁可漏传一个复活者，也绝不把亡者拉回局内」。</p>
+     */
+    private static boolean isEligibleForSkill(ServerPlayer player) {
+        if (player == null) {
+            return false;
+        }
+        if (DEAD_PLAYERS.contains(player.getUUID())) {
+            return false;
+        }
+        if (!player.isAlive() || player.isDeadOrDying() || player.isRemoved()) {
+            return false;
+        }
+        if (player.isSpectator() || player.isCreative()) {
+            return false;
+        }
+        return GameUtils.isPlayerAliveAndSurvival(player);
+    }
+
     public static void register() {
         if (registered) {
             return;
@@ -161,6 +230,9 @@ public class GreenRole extends NormalRole {
         // ④ 空手左键：放行 + 命中结算（绝不致死）
         AllowPlayerPunching.EVENT.register(GreenRole::allowPunching);
         AttackEntityCallback.EVENT.register(GreenRole::onAttackEntity);
+
+        // 记录本局死亡名单：让技能跳过「已死亡（含死亡后进训练场）」的玩家
+        registerDeathTracking();
 
         CheeseRolePack.LOGGER.info("已注册格林（{}），技能 = {}", ID, SKILL_ID);
     }
@@ -317,6 +389,9 @@ public class GreenRole extends NormalRole {
         AreasWorldComponent areas = AreasWorldComponent.KEY.get(level);
         int moved = 0;
         for (ServerPlayer target : level.players()) {
+            if (!isEligibleForSkill(target)) {
+                continue; // 已死亡 / 在训练场 / 旁观 / 创造：绝不传送，避免把亡者拉回局内
+            }
             Integer room = GameUtils.roomToPlayer.get(target.getUUID());
             if (room == null) {
                 continue; // 没有分配房间：跳过，绝不冒险传送
@@ -346,6 +421,9 @@ public class GreenRole extends NormalRole {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
         int drained = 0;
         for (ServerPlayer target : level.players()) {
+            if (!isEligibleForSkill(target)) {
+                continue; // 亡者不扣 SAN（他们已无局内心智可言）
+            }
             SRERole role = game.getRole(target);
             if (role == null || role.getMoodType() != SRERole.MoodType.REAL) {
                 continue; // SAN 不可被减少的角色：跳过
