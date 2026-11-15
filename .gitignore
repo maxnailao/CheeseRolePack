@@ -7,6 +7,9 @@ run/
 runtime_mods/*
 !runtime_mods/README.md
 
+# ———— 临时素材（Blockbench 模型、待转换贴图等，不入库）————
+temp/
+
 # ———— Gradle / 构建产物 ————
 build/
 .gradle/

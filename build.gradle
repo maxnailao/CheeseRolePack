@@ -64,6 +64,17 @@ dependencies {
     // ForgeConfigAPIPort、datasync …）拷进 runtime_mods/ 即可，不会被 git/构建污染。
     modRuntimeOnly fileTree(dir: 'runtime_mods', include: '*.jar')
 
+    // ———— SRE 发行版里以「嵌套 jar」打包、但 dev jar 不含的库 ————
+    // 发行版的 star_rail_express-4.3.0.jar 里有 META-INF/jars/{tinypinyin,HikariCP,
+    // mysql-connector-j,mixinsquared-fabric}；dev 版（build/devlibs）不打包 include 依赖，
+    // 所以 dev 运行时这些库必须自己补，否则一用到就 NoClassDefFoundError。
+    // 已实测：SRE 的职业介绍界面搜索框（PinYinUtils）会直接崩，必须补 tinypinyin。
+    runtimeOnly "com.github.promeg:tinypinyin:2.0.3"
+    // 其余三个目前 dev 环境没触发，需要时再放开：
+    // runtimeOnly "com.zaxxer:HikariCP:5.1.0"
+    // runtimeOnly "com.mysql:mysql-connector-j:8.4.0"
+    // modRuntimeOnly "com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.7-beta.1"
+
     // ———— 故意不引入的依赖（都有原因，勿随意加回） ————
     // blindness（失明症）：只服务于特定角色，且硬依赖 kirin + owo-lib + player-animator；
     //                      StarRailExpress 本身不依赖它，本附加模组也不需要。

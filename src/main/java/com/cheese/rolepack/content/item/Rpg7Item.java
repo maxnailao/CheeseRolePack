@@ -39,9 +39,9 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
     /** 爆炸半径（可动态调整，默认同 C4） */
     public static float BLAST_RADIUS = 7.0f;
     /** 射击冷却（tick）：普通模式炮管冷却 */
-    public static int COOLDOWN_TICKS = 20 * 3;
+    public static int COOLDOWN_TICKS = 20 * 10;
     /** 冒险模式（非创造）射击后的炮管冷却（tick）：30 秒 */
-    public static final int ADVENTURE_COOLDOWN_TICKS = 20 * 30;
+    public static final int ADVENTURE_COOLDOWN_TICKS = 20 * 10;
     /** 换弹耗时（tick）：5 秒 */
     public static final int RELOAD_TICKS = 20 * 5;
     /**

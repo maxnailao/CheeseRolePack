@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
  *
  * <p>注册 id：{@code cheeserolepack:cheese_role}，标题翻译键
  * {@code itemGroup.cheeserolepack.cheese_role}（zh_cn / en_us 都是「CheeseRole」），
- * 图标使用 RPG-7 火箭筒。目前分页里只有 RPG-7 与它的火箭弹。</p>
+ * 图标使用 RPG-7 火箭筒。分页内有 RPG-7、它的火箭弹、阔剑地雷与反人员地雷。</p>
  */
 public final class ModCreativeTabs {
 
@@ -32,6 +32,8 @@ public final class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.RPG7);
                         output.accept(ModItems.RPG7_AMMO);
+                        output.accept(ModItems.CLAYMORE_MINE);
+                        output.accept(ModItems.ANTI_PERSONNEL_MINE);
                     })
                     .build());
 
