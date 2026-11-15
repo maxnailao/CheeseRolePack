@@ -136,6 +136,16 @@ public class ClaymoreMineItem extends Item {
                 player.getX(), player.getY(), player.getZ(), player.getYRot());
         mine.setOwner(player.getUUID());
         serverLevel.addFreshEntity(mine);
+
+        // 对局日志广播：和纵火犯浇油一样，把「布设地雷」这个动作记进回放/日志
+        try {
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.claymore_mine.planted",
+                            io.wifi.starrailexpress.api.replay.GameReplayUtils
+                                    .getReplayPlayerDisplayText(player, true)));
+        } catch (Throwable ignored) {
+            // 回放系统异常绝不影响玩法
+        }
         // 刷新右下角 HUD 的「阔剑地雷数量」
         BetterGangsterRoleData.refresh(player);
 

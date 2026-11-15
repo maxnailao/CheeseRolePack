@@ -289,6 +289,7 @@ public class ClaymoreMineEntity extends Entity {
         // 先抓住布设者（discard 之后实体就下线了）
         Player ownerPlayer = (owner != null) ? level.getPlayerByUUID(owner) : null;
         String defuserName = byPlayer != null ? byPlayer.getName().getString() : "";
+        broadcastDefused(byPlayer);
 
         this.discard();
         // HUD 计数：地雷下线后重数一遍
@@ -415,6 +416,7 @@ public class ClaymoreMineEntity extends Entity {
      * 然后按扇形（{@link #KILL_RANGE} 格 / 总张角 70°）击杀范围内的玩家，最后 {@link #discard()}。
      */
     public void explode(ServerLevel level) {
+        broadcastExploded(level);
         Vec3 center = this.position();
 
         // 先下线自己（避免同一 tick 重复引爆），再刷新布设者的 HUD 计数
@@ -640,5 +642,35 @@ public class ClaymoreMineEntity extends Entity {
             removed++;
         }
         return removed;
+    }
+
+    /**
+     * 对局日志广播：「地雷被引爆」。
+     */
+    private void broadcastExploded(ServerLevel level) {
+        try {
+            Player ownerPlayer = owner != null ? level.getPlayerByUUID(owner) : null;
+            Component name = ownerPlayer != null
+                    ? io.wifi.starrailexpress.api.replay.GameReplayUtils
+                            .getReplayPlayerDisplayText(ownerPlayer, true)
+                    : Component.literal("?");
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.claymore_mine.exploded", name));
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 对局日志广播：「地雷被拆除」（拆除者的名字）。 */
+    private static void broadcastDefused(Player defuser) {
+        if (defuser == null) {
+            return;
+        }
+        try {
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.claymore_mine.defused",
+                            io.wifi.starrailexpress.api.replay.GameReplayUtils
+                                    .getReplayPlayerDisplayText(defuser, true)));
+        } catch (Throwable ignored) {
+        }
     }
 }

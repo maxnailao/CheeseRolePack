@@ -128,6 +128,8 @@ public class BetterGangsterRole extends NormalRole {
         List<ItemStack> items = new ArrayList<>();
         items.add(org.agmas.noellesroles.init.ModItems.C4.getDefaultInstance());
         items.add(org.agmas.noellesroles.init.ModItems.C4_DETONATOR.getDefaultInstance());
+        // 初始多给一颗阔剑地雷（与悍匪的 C4 组合区分开：本职业有地雷玩法）
+        items.add(ModItems.CLAYMORE_MINE.getDefaultInstance());
         return items;
     }
 

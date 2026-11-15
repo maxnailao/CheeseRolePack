@@ -273,6 +273,7 @@ public class AntiPersonnelMineEntity extends Entity {
     }
 
     private void explode(ServerLevel level) {
+        broadcastExploded(level);
         double cx = this.getX();
         double cy = this.getY() + 0.1D;
         double cz = this.getZ();
@@ -283,8 +284,16 @@ public class AntiPersonnelMineEntity extends Entity {
 
         // 爆炸音效与粒子
         level.playSound(null, cx, cy, cz, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 2.0F, 1.0F);
-        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, cx, cy, cz, 1, 0, 0, 0, 0);
-        level.sendParticles(ParticleTypes.SMOKE, cx, cy, cz, 80, 0.6D, 0.6D, 0.6D, 0.15D);
+        // —— 粒子效果与杀伤半径匹配（EXPLOSION_RADIUS = 2.5 格）——
+        // 原来的 EXPLOSION_EMITTER 是原版「大爆炸」那一团（TNT/苦力怕那种），视觉直径约 4~6 格，
+        // 比 2.5 格的杀伤范围夸张一倍多；而 SMOKE 的散布只有 0.6 格，烟团又小得像个屁。
+        // 改成：小的 EXPLOSION 多点散布 + 按半径铺开的烟/云，让「看到的范围」≈「炸到的范围」。
+        //
+        // sendParticles(type, x, y, z, count, xDist, yDist, zDist, speed) 里的 *Dist 是「半幅」：
+        // 粒子会落在 ±Dist 的盒子里，所以写 1.8 ≈ 直径 3.6，配合半径 2.5 的边缘刚好。
+        level.sendParticles(ParticleTypes.EXPLOSION, cx, cy + 0.3D, cz, 7, 1.8D, 0.6D, 1.8D, 0.0D);
+        level.sendParticles(ParticleTypes.SMOKE, cx, cy + 0.2D, cz, 70, 2.2D, 0.9D, 2.2D, 0.02D);
+        level.sendParticles(ParticleTypes.CLOUD, cx, cy + 0.25D, cz, 24, 2.2D, 0.7D, 2.2D, 0.06D);
 
         // 击杀者记为布设该地雷的玩家
         Player killer = owner != null ? level.getPlayerByUUID(owner) : null;
@@ -405,6 +414,7 @@ public class AntiPersonnelMineEntity extends Entity {
             this.discard();
             BetterGangsterRoleData.refreshOwner(level, owner);
             refundOwnerOnDefuse(level);
+            broadcastDefused(defuser);
             defuser.displayClientMessage(
                     Component.translatable("message.cheeserolepack.anti_personnel_mine.defuse_done"), false);
         }
@@ -572,5 +582,33 @@ public class AntiPersonnelMineEntity extends Entity {
             removed++;
         }
         return removed;
+    }
+
+    /** 对局日志广播：「地雷被引爆」。 */
+    private void broadcastExploded(ServerLevel level) {
+        try {
+            Player ownerPlayer = owner != null ? level.getPlayerByUUID(owner) : null;
+            Component name = ownerPlayer != null
+                    ? io.wifi.starrailexpress.api.replay.GameReplayUtils
+                            .getReplayPlayerDisplayText(ownerPlayer, true)
+                    : Component.literal("?");
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.anti_personnel_mine.exploded", name));
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 对局日志广播：「地雷被拆除」（拆除者的名字）。 */
+    private static void broadcastDefused(Player defuser) {
+        if (defuser == null) {
+            return;
+        }
+        try {
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.anti_personnel_mine.defused",
+                            io.wifi.starrailexpress.api.replay.GameReplayUtils
+                                    .getReplayPlayerDisplayText(defuser, true)));
+        } catch (Throwable ignored) {
+        }
     }
 }

@@ -65,5 +65,11 @@
   "message.cheeserolepack.claymore_mine.arm_too_early": "Wait %s s after planting before arming",
   "message.cheeserolepack.remote_detonate.not_armed": "That mine is not armed yet - cannot detonate remotely",
   "message.cheeserolepack.anti_personnel_mine.defused_refund": "Your anti-personnel mine was defused - refunded %s coins",
-  "star.story.role.better_gangster": "Among all of them, he was the one with the least talent...\n\nTo change his fate, the Gangster bought some equipment on the black market.\n\nThis time he will prove to everyone that he is no weakling - he too can complete the missions the organization hands down."
+  "star.story.role.better_gangster": "Among all of them, he was the one with the least talent...\n\nTo change his fate, the Gangster bought some equipment on the black market.\n\nThis time he will prove to everyone that he is no weakling - he too can complete the missions the organization hands down.",
+  "replay.cheeserolepack.claymore_mine.planted": "%s planted a Claymore Mine",
+  "replay.cheeserolepack.anti_personnel_mine.planted": "%s planted an Anti-Personnel Mine",
+  "replay.cheeserolepack.claymore_mine.exploded": "%s's Claymore Mine was detonated",
+  "replay.cheeserolepack.claymore_mine.defused": "%s defused a Claymore Mine",
+  "replay.cheeserolepack.anti_personnel_mine.exploded": "%s's Anti-Personnel Mine was detonated",
+  "replay.cheeserolepack.anti_personnel_mine.defused": "%s defused an Anti-Personnel Mine"
 }
