@@ -121,9 +121,10 @@ public class AntiPersonnelMineItem extends Item {
         // 对局日志广播：和纵火犯浇油一样，把「布设地雷」这个动作记进回放/日志
         try {
             io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.cheeserolepack.anti_personnel_mine.planted",
+                    Component.translatable("replay.cheeserolepack.planted",
                             io.wifi.starrailexpress.api.replay.GameReplayUtils
-                                    .getReplayPlayerDisplayText(player, true)));
+                                    .getReplayPlayerDisplayText(player, true),
+                            itemLabel("item.cheeserolepack.anti_personnel_mine")));
         } catch (Throwable ignored) {
             // 回放系统异常绝不影响玩法
         }
@@ -141,5 +142,13 @@ public class AntiPersonnelMineItem extends Item {
             @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         tooltip.add(Component.translatable("item.cheeserolepack.anti_personnel_mine.tooltip")
                 .withStyle(ChatFormatting.GRAY));
+    }
+
+    /** 把道具名做成「[白色物品名]」——与 SRE 原生日志「使用了 [手榴弹]」的样式一致。 */
+    private static Component itemLabel(String nameKey) {
+        net.minecraft.ChatFormatting white = net.minecraft.ChatFormatting.WHITE;
+        return Component.literal("[").withStyle(white)
+                .append(Component.translatable(nameKey).withStyle(white))
+                .append(Component.literal("]").withStyle(white));
     }
 }

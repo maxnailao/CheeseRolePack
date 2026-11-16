@@ -124,8 +124,9 @@ public class GreenRole extends NormalRole {
         // 冲刺时长直接用 GameConstants.getInTicks(0, 10)（= TMMRoles 里那个常量自身的算法），
         // 不直接读 TMMRoles.CIVILIAN_MAX_SPRINT_TICKS：该字段不是编译期常量，会生成 getstatic
         // 引用，一旦运行期 SRE 构建版本里没有这个字段就会 NoSuchFieldError。
+        // 最后一个参数是 canSeeTime（能否看见对局倒计时/时间）——格林<b>不能</b>看见时间。
         super(ID, COLOR, true, false, SRERole.MoodType.REAL,
-                io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), true);
+                io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), false);
     }
 
     /**

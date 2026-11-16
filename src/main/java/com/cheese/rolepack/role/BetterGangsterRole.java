@@ -148,6 +148,12 @@ public class BetterGangsterRole extends NormalRole {
         Rpg7Item.setAmmoCount(rocketLauncher, Rpg7Item.MAX_AMMO);
         giveOrDrop(player, rocketLauncher);
 
+        // 每次进入疯狂模式都重置「刀杀奖励已发」标记 → 每次疯狂模式只能拿一次
+        resetPsychoKnifeReward(player);
+
+        // 疯狂模式一开启就立刻刷新小刀冷却（玩家能马上挥第一刀）
+        player.getCooldowns().removeCooldown(io.wifi.starrailexpress.index.TMMItems.KNIFE);
+
         player.displayClientMessage(
                 Component.translatable("message.cheeserolepack.psycho_mode.start"), true);
         CheeseRolePack.LOGGER.info("[疯狂模式] {} 进入疯狂模式，已发放装填好的 RPG-7",
@@ -173,6 +179,7 @@ public class BetterGangsterRole extends NormalRole {
      */
     @Override
     public void onPsychoOver(Player player, SREPlayerPsychoComponent component) {
+        resetPsychoKnifeReward(player);
         int guns = SREItemUtils.clearItem(player, ModItems.RPG7);
         int ammo = SREItemUtils.clearItem(player, ModItems.RPG7_AMMO);
 
@@ -209,6 +216,14 @@ public class BetterGangsterRole extends NormalRole {
                 || killer.getMainHandItem().is(TMMItems.KNIFE);
         if (!knifeKill) {
             return;
+        }
+        // 每次疯狂模式只触发一次：已经拿过就不再给
+        BetterGangsterRoleData data = io.wifi.starrailexpress.api.data.RoleData.getNullable(BetterGangsterRoleData.class, killer);
+        if (data != null) {
+            if (data.isPsychoKnifeRewardGranted()) {
+                return;
+            }
+            data.setPsychoKnifeRewardGranted(true);
         }
         giveOrDrop(killer, new ItemStack(ModItems.RPG7_AMMO));
         killer.displayClientMessage(
@@ -370,7 +385,7 @@ public class BetterGangsterRole extends NormalRole {
     public static final double REMOTE_DETONATE_MAX_RANGE = 200.0D;
 
     /** 判定「附近有玩家带钳子」的半径（格）。 */
-    public static final double PLIERS_BLOCK_RADIUS = 10.0D;
+    public static final double PLIERS_BLOCK_RADIUS = 3.0D;
 
     /**
      * 注册统一技能（SRE 的技能系统会据此知道本职业有一个技能）。
@@ -455,8 +470,10 @@ public class BetterGangsterRole extends NormalRole {
                     Component.translatable("message.cheeserolepack.remote_detonate.cooldown"), true);
             return false;
         }
-        // 3) 半径 10 格内不能有玩家带钳子
+        // 3) 半径 PLIERS_BLOCK_RADIUS（3 格）内不能有玩家带钳子
         if (hasPliersNearby(level, target.position())) {
+            CheeseRolePack.LOGGER.info("[远程引爆] 被钳子拦截：地雷 {} 的 {} 格内有玩家携带钳子",
+                    target.blockPosition(), PLIERS_BLOCK_RADIUS);
             player.displayClientMessage(
                     Component.translatable("message.cheeserolepack.remote_detonate.pliers"), true);
             return false;
@@ -509,6 +526,12 @@ public class BetterGangsterRole extends NormalRole {
                 continue;
             }
             if (carriesPliers(other)) {
+                // 便于实测核对：把实际距离和判定半径一起打出来
+                // 注意：SLF4J 只认 {}，不支持 {:.2f} 这类格式，所以小数用 String.format 预先格式化
+                CheeseRolePack.LOGGER.info("[远程引爆] 持钳者 {} 距地雷 {} 格（判定半径 {} 格）",
+                        other.getName().getString(),
+                        String.format("%.2f", Math.sqrt(other.distanceToSqr(center))),
+                        String.format("%.1f", PLIERS_BLOCK_RADIUS));
                 return true;
             }
         }
@@ -528,5 +551,16 @@ public class BetterGangsterRole extends NormalRole {
             }
         }
         return false;
+    }
+
+    /** 重置「本次疯狂模式的刀杀奖励已发」标记（进入/退出疯狂模式时各调一次）。 */
+    private static void resetPsychoKnifeReward(Player player) {
+        if (player == null) {
+            return;
+        }
+        BetterGangsterRoleData data = io.wifi.starrailexpress.api.data.RoleData.getNullable(BetterGangsterRoleData.class, player);
+        if (data != null) {
+            data.setPsychoKnifeRewardGranted(false);
+        }
     }
 }

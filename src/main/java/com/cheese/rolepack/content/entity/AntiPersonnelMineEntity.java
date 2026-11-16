@@ -55,7 +55,7 @@ import java.util.UUID;
 public class AntiPersonnelMineEntity extends Entity {
 
     /** 布设者离开后的布防延迟（3 秒 = 60 tick），与 RKD 的 {@code ARM_DELAY_TICKS} 一致。 */
-    public static final int ARM_DELAY_TICKS = 60;
+    public static final int ARM_DELAY_TICKS = 20;
 
     /** 爆炸半径（格），与 RKD 的 {@code EXPLOSION_RADIUS} 一致。 */
     public static final float EXPLOSION_RADIUS = 2.5F;
@@ -593,7 +593,8 @@ public class AntiPersonnelMineEntity extends Entity {
                             .getReplayPlayerDisplayText(ownerPlayer, true)
                     : Component.literal("?");
             io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.cheeserolepack.anti_personnel_mine.exploded", name));
+                    Component.translatable("replay.cheeserolepack.exploded", name,
+                            itemLabel("item.cheeserolepack.anti_personnel_mine")));
         } catch (Throwable ignored) {
         }
     }
@@ -605,10 +606,19 @@ public class AntiPersonnelMineEntity extends Entity {
         }
         try {
             io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.cheeserolepack.anti_personnel_mine.defused",
+                    Component.translatable("replay.cheeserolepack.defused",
                             io.wifi.starrailexpress.api.replay.GameReplayUtils
-                                    .getReplayPlayerDisplayText(defuser, true)));
+                                    .getReplayPlayerDisplayText(defuser, true),
+                            itemLabel("item.cheeserolepack.anti_personnel_mine")));
         } catch (Throwable ignored) {
         }
+    }
+
+    /** 把道具名做成「[白色物品名]」——与 SRE 原生日志「使用了 [手榴弹]」的样式一致。 */
+    private static Component itemLabel(String nameKey) {
+        net.minecraft.ChatFormatting white = net.minecraft.ChatFormatting.WHITE;
+        return Component.literal("[").withStyle(white)
+                .append(Component.translatable(nameKey).withStyle(white))
+                .append(Component.literal("]").withStyle(white));
     }
 }

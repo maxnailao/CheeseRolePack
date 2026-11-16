@@ -39,10 +39,14 @@ public class BetterGangsterRoleData extends SimpleRoleData {
     /** 反人员地雷的场上上限。 */
     public static final int MAX_AP_MINES = 2;
 
+    private static final String TAG_KNIFE_REWARD = "psychoKnifeReward";
     private static final String TAG_CLAYMORES = "claymores";
     private static final String TAG_AP_MINES = "apMines";
 
     /** 兜底重算间隔（tick）。 */
+    /** 瘋狂模式期間小刀冷卻上限：10 秒（200 tick）。 */
+    public static final int KNIFE_PSYCHO_COOLDOWN_TICKS = 200;
+
     private static final int RECONCILE_INTERVAL = 20;
 
     /** 本地玩家场上还活着的阔剑地雷数量。 */
@@ -53,6 +57,12 @@ public class BetterGangsterRoleData extends SimpleRoleData {
 
     /** 兜底重算计时器。 */
     private int reconcileTimer;
+
+    /** 上一 tick 小刀是否处于冷却中（用来检测「刚挥刀」这个跳变，只钳制一次）。 */
+    private boolean knifeCooldownSeen;
+
+    /** 本次疯狂模式是否已经发过「刀杀奖励火箭弹」（每次疯狂模式只给一次）。 */
+    private boolean psychoKnifeRewardGranted;
 
     public BetterGangsterRoleData(RoleDataContext context) {
         super(context);
@@ -97,6 +107,9 @@ public class BetterGangsterRoleData extends SimpleRoleData {
     /** 服务端每 tick：每 {@link #RECONCILE_INTERVAL} tick 兜底重数一次。 */
     @Override
     public void serverTick() {
+        // 疯狂模式期间：小刀冷却上限 10 秒（每 tick 检查，早于下面的兜底计时器）
+        clampKnifeCooldownInPsycho();
+
         if (++reconcileTimer < RECONCILE_INTERVAL) {
             return;
         }
@@ -112,12 +125,15 @@ public class BetterGangsterRoleData extends SimpleRoleData {
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+        tag.putBoolean(TAG_KNIFE_REWARD, this.psychoKnifeRewardGranted);
         tag.putInt(TAG_CLAYMORES, this.claymoresPlaced);
         tag.putInt(TAG_AP_MINES, this.apMinesPlaced);
     }
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+        // 恢复「本次疯狂模式刀杀奖励已发」标记：否则重登/重连后能再领一次
+        this.psychoKnifeRewardGranted = tag.getBoolean(TAG_KNIFE_REWARD);
         this.claymoresPlaced = Math.max(0, tag.getInt(TAG_CLAYMORES));
         this.apMinesPlaced = Math.max(0, tag.getInt(TAG_AP_MINES));
     }
@@ -149,5 +165,51 @@ public class BetterGangsterRoleData extends SimpleRoleData {
         if (ownerPlayer != null) {
             refresh(ownerPlayer);
         }
+    }
+
+    /**
+     * 疯狂模式期间把「小刀冷却」压到最多 {@value #KNIFE_PSYCHO_COOLDOWN_TICKS} tick（10 秒）。
+     *
+     * <p><b>为什么用「钳制」而不是改配置</b>：SRE 的刀冷却来自
+     * {@code GameConstants.ITEM_COOLDOWNS}（默认 {@code SREConfig.knifeCooldown * 20}，即 30 秒），
+     * 那是<b>全局静态表</b>，直接改会影响所有玩家。
+     * 这里改成：玩家挥刀后 SRE 先把冷却设成 30 秒，我们在每 tick 检查一次，
+     * 发现剩余超过 10 秒就重新设为 10 秒 —— 只作用于处于疯狂模式的本人。</p>
+     *
+     * <p>剩余时长 = 剩余比例 × 该次冷却的总时长（{@code ItemCooldowns} 只暴露比例）。</p>
+     */
+    private void clampKnifeCooldownInPsycho() {
+        try {
+            if (!(this.player instanceof ServerPlayer sp)) {
+                return;
+            }
+            io.wifi.starrailexpress.cca.SREPlayerPsychoComponent psycho =
+                    io.wifi.starrailexpress.cca.SREPlayerPsychoComponent.KEY.get(sp);
+            net.minecraft.world.item.Item knife = io.wifi.starrailexpress.index.TMMItems.KNIFE;
+            boolean onCooldown = sp.getCooldowns().isOnCooldown(knife);
+
+            // 只在「疯狂模式 + 刚挥了一刀」这个跳变上钳制一次。
+            //
+            // 不能每 tick 都钳：ItemCooldowns 只暴露「占本次冷却总时长的比例」，
+            // 我们把冷却改成 200 tick 之后，这条记录的总时长也变成 200，
+            // 再用全局的 600 去乘比例就会算回 ~600，于是每 tick 都重新钳成 10 秒 ——
+            // 冷却永远走不完（表现就是「卡在 10 秒不动」）。
+            if (psycho != null && psycho.psychoTicks > 0 && onCooldown && !knifeCooldownSeen) {
+                sp.getCooldowns().addCooldown(knife, KNIFE_PSYCHO_COOLDOWN_TICKS);
+            }
+            knifeCooldownSeen = onCooldown;
+        } catch (Throwable ignored) {
+            // 冷却钳制失败绝不影响对局
+        }
+    }
+
+    /** 本次疯狂模式的刀杀奖励是否已经发过（每次疯狂模式只给一次）。 */
+    public boolean isPsychoKnifeRewardGranted() {
+        return this.psychoKnifeRewardGranted;
+    }
+
+    /** 标记「本次疯狂模式的刀杀奖励已发」。 */
+    public void setPsychoKnifeRewardGranted(boolean granted) {
+        this.psychoKnifeRewardGranted = granted;
     }
 }

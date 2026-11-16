@@ -655,7 +655,8 @@ public class ClaymoreMineEntity extends Entity {
                             .getReplayPlayerDisplayText(ownerPlayer, true)
                     : Component.literal("?");
             io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.cheeserolepack.claymore_mine.exploded", name));
+                    Component.translatable("replay.cheeserolepack.exploded", name,
+                            itemLabel("item.cheeserolepack.claymore_mine")));
         } catch (Throwable ignored) {
         }
     }
@@ -667,10 +668,19 @@ public class ClaymoreMineEntity extends Entity {
         }
         try {
             io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.cheeserolepack.claymore_mine.defused",
+                    Component.translatable("replay.cheeserolepack.defused",
                             io.wifi.starrailexpress.api.replay.GameReplayUtils
-                                    .getReplayPlayerDisplayText(defuser, true)));
+                                    .getReplayPlayerDisplayText(defuser, true),
+                            itemLabel("item.cheeserolepack.claymore_mine")));
         } catch (Throwable ignored) {
         }
+    }
+
+    /** 把道具名做成「[白色物品名]」——与 SRE 原生日志「使用了 [手榴弹]」的样式一致。 */
+    private static Component itemLabel(String nameKey) {
+        net.minecraft.ChatFormatting white = net.minecraft.ChatFormatting.WHITE;
+        return Component.literal("[").withStyle(white)
+                .append(Component.translatable(nameKey).withStyle(white))
+                .append(Component.literal("]").withStyle(white));
     }
 }
