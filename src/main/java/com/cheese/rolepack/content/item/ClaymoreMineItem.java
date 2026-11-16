@@ -72,9 +72,8 @@ public class ClaymoreMineItem extends Item {
         if (player.isSpectator()) {
             return InteractionResultHolder.pass(stack);
         }
-        // 安全时间内不能布设：压入原版冷却（时长 = 安全时间剩余）
+        // 安全时间内不能布设（开局已由 ModGameEvents 上好冷却，这里只是兜底，静默失败不提示）
         if (isInSafeTime(player)) {
-            applySafeTimeCooldown(player, stack);
             return InteractionResultHolder.fail(stack);
         }
         if (player.getCooldowns().isOnCooldown(stack.getItem())) {
@@ -127,9 +126,8 @@ public class ClaymoreMineItem extends Item {
         if (player.isSpectator()) {
             return stack;
         }
-        // 蓄力过程中可能进入安全时间：这时候也不能真正布设
+        // 蓄力过程中可能进入安全时间：不布设、不消耗（静默）
         if (isInSafeTime(player)) {
-            applySafeTimeCooldown(player, stack);
             return stack;
         }
 

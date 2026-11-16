@@ -75,9 +75,8 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
         if (user.isSpectator() || !user.isAlive()) {
             return InteractionResultHolder.fail(stack);
         }
-        // 安全时间内不能开火：压入原版冷却（时长 = 安全时间剩余）
+        // 安全时间内不能开火（开局已上好冷却，这里只是兜底，静默失败）
         if (isInSafeTime(user)) {
-            applySafeTimeCooldown(user, stack);
             return InteractionResultHolder.fail(stack);
         }
         if (user.getCooldowns().isOnCooldown(stack.getItem())) {
@@ -139,7 +138,6 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
         if (!stack.is(ModItems.RPG7))
             return;
         if (isInSafeTime(user)) {
-            applySafeTimeCooldown(user, stack);
             return;
         }
         if (user.getCooldowns().isOnCooldown(stack.getItem()))
