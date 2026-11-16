@@ -30,7 +30,7 @@ import java.util.Optional;
 public final class MineTargeting {
 
     /** 射线最远距离（格）。 */
-    public static final double MAX_RANGE = 64.0D;
+    public static final double MAX_RANGE = 200.0D;
 
     /** 求交时把地雷包围盒放大的量（格）：地雷只有 0.8×0.3，不放宽极难对准。 */
     private static final double AIM_INFLATE = 0.35D;

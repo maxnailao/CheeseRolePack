@@ -22,7 +22,7 @@ import java.util.Optional;
 public final class RemoteDetonateTargeting {
 
     /** 射线最远距离（格）。 */
-    public static final double MAX_RANGE = 64.0D;
+    public static final double MAX_RANGE = 200.0D;
 
     /** 包围盒放大（格）。 */
     private static final double AIM_INFLATE = 0.35D;

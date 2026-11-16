@@ -73,7 +73,7 @@ public class AntiPersonnelMineEntity extends Entity {
     public static final int PLIERS_DEFUSE_PROGRESS_INTERVAL = 10;
 
     /** 钳子拆除者离地雷的最远距离（格），超过即中断。 */
-    public static final double PLIERS_DEFUSE_MAX_DISTANCE = 3.0D;
+    public static final double PLIERS_DEFUSE_MAX_DISTANCE = 2.5D;
 
     /** 同步数据索引 0：是否已布防（客户端据此决定要不要画透视轮廓）。 */
     private static final EntityDataAccessor<Boolean> DATA_ARMED = SynchedEntityData.defineId(

@@ -41,7 +41,8 @@ public class AntiPersonnelMineItem extends Item {
 
     /** 布设所需长按时长（3 秒，与 RKD 的 {@code PLACE_TICKS} 一致）。 */
     /** 布设所需长按时长：<b>2 秒</b>（40 tick）。 */
-    public static final int PLACE_TICKS = 40;
+    /** 布设所需长按时长：<b>1 秒</b>（20 tick）。 */
+    public static final int PLACE_TICKS = 20;
 
     public AntiPersonnelMineItem(Properties properties) {
         super(properties);

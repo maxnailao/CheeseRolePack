@@ -53,7 +53,7 @@ public class ClaymoreMineEntity extends Entity {
 
     /** 引爆判定：玩家必须落在正面方向 0 ~ 0.8 格的这一层里。 */
     /** 布设后 2 秒才允许手动布防（40 tick）。 */
-    public static final int ARM_DELAY_TICKS = 40;
+    public static final int ARM_DELAY_TICKS = 20;
 
     public static final double TRIGGER_DEPTH = 0.8D;
 
@@ -76,7 +76,7 @@ public class ClaymoreMineEntity extends Entity {
     public static final int DEFUSE_PROGRESS_INTERVAL = 10;
 
     /** 拆除者离地雷的最远距离（格），超过即中断。 */
-    public static final double DEFUSE_MAX_DISTANCE = 3.0D;
+    public static final double DEFUSE_MAX_DISTANCE = 1.0D;
 
     /** 同步数据索引 16：是否已布防（客户端渲染激光模型要用）。 */
     private static final EntityDataAccessor<Boolean> DATA_ARMED = SynchedEntityData.defineId(

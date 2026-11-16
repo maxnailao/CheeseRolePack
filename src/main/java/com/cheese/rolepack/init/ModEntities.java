@@ -47,7 +47,7 @@ public final class ModEntities {
             CheeseRolePack.id("claymore_mine"),
             FabricEntityTypeBuilder.<ClaymoreMineEntity>create(MobCategory.MISC, ClaymoreMineEntity::new)
                     .dimensions(EntityDimensions.fixed(0.8F, 0.3F))
-                    .trackRangeBlocks(64)
+                    .trackRangeBlocks(200)
                     .trackedUpdateRate(2)
                     .build());
 
@@ -60,7 +60,7 @@ public final class ModEntities {
             CheeseRolePack.id("anti_personnel_mine"),
             FabricEntityTypeBuilder.<AntiPersonnelMineEntity>create(MobCategory.MISC, AntiPersonnelMineEntity::new)
                     .dimensions(EntityDimensions.fixed(0.8F, 0.3F))
-                    .trackRangeBlocks(64)
+                    .trackRangeBlocks(200)
                     .trackedUpdateRate(2)
                     .build());
 

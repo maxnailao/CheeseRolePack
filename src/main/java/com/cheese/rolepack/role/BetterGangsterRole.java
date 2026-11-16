@@ -367,7 +367,7 @@ public class BetterGangsterRole extends NormalRole {
     public static final int REMOTE_DETONATE_COOLDOWN_TICKS = 20;
 
     /** 触发者与地雷的最大作用距离（格）：超过这个距离就没法远程点燃。 */
-    public static final double REMOTE_DETONATE_MAX_RANGE = 64.0D;
+    public static final double REMOTE_DETONATE_MAX_RANGE = 200.0D;
 
     /** 判定「附近有玩家带钳子」的半径（格）。 */
     public static final double PLIERS_BLOCK_RADIUS = 10.0D;
@@ -490,7 +490,8 @@ public class BetterGangsterRole extends NormalRole {
         if (distance <= 50.0D) {
             return 40;
         }
-        return 60;
+        // 50 格以外：2.5 秒（50 tick）
+        return 50;
     }
 
     /**
