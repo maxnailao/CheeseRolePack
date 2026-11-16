@@ -68,5 +68,8 @@
   "star.story.role.better_gangster": "他们之中，就属他最没有天赋……\n\n为了逆天改命，悍匪去黑市购入了一些装备。\n\n这一次他要向所有人证明他不是弱者，他也能完成组织下发的任务。\n\n一些相关道具模型画的不是很好看，作者美术不是特别好qwq",
   "replay.cheeserolepack.planted": "%s 使用了 %s",
   "replay.cheeserolepack.exploded": "%s 的 %s 被引爆了",
-  "replay.cheeserolepack.defused": "%s 拆除了 %s"
+  "replay.cheeserolepack.defused": "%s 拆除了 %s",
+  "message.cheeserolepack.claymore_mine.defuse_too_far": "请更靠近阔剑地雷进行拆除",
+  "message.cheeserolepack.mine.safe_time": "安全时间内无法布设地雷",
+  "message.cheeserolepack.rpg7.safe_time": "安全时间内无法使用 RPG-7"
 }

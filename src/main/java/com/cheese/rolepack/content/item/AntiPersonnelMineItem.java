@@ -56,6 +56,11 @@ public class AntiPersonnelMineItem extends Item {
         if (player.isSpectator()) {
             return InteractionResultHolder.pass(stack);
         }
+        // 安全时间内不能布设：压入原版冷却（时长 = 安全时间剩余）
+        if (isInSafeTime(player)) {
+            applySafeTimeCooldown(player, stack);
+            return InteractionResultHolder.fail(stack);
+        }
         player.startUsingItem(usedHand);
         return InteractionResultHolder.consume(stack);
     }
@@ -101,6 +106,11 @@ public class AntiPersonnelMineItem extends Item {
         }
         // 只排除旁观者 / 已死亡；创造模式允许（与 RKD 的差异，理由见类注释）
         if (player.isSpectator() || !player.isAlive()) {
+            return stack;
+        }
+        // 蓄力过程中可能进入安全时间：这时候也不能真正布设
+        if (isInSafeTime(player)) {
+            applySafeTimeCooldown(player, stack);
             return stack;
         }
 
@@ -150,5 +160,30 @@ public class AntiPersonnelMineItem extends Item {
         return Component.literal("[").withStyle(white)
                 .append(Component.translatable(nameKey).withStyle(white))
                 .append(Component.literal("]").withStyle(white));
+    }
+
+    /** 是否处于「安全时间」（SRE 的 SAFE_TIME 效果，商店在安全时间内禁止购买/使用）。 */
+    private static boolean isInSafeTime(Player player) {
+        return player != null && player.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+    }
+
+    /**
+     * 安全时间内把地雷压进<b>原版物品冷却</b>，冷却时长 = 安全时间剩余时长。
+     *
+     * <p>这样物品栏上会显示原版的冷却遮罩（和用过的物品一样），
+     * 玩家一眼就能看出「现在不能用」，而不是右键后没反应。</p>
+     */
+    private static void applySafeTimeCooldown(Player player, ItemStack stack) {
+        int ticks = 100; // 兜底：拿不到效果实例时压 5 秒
+        try {
+            var instance = player.getEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+            if (instance != null) {
+                ticks = Math.max(20, instance.getDuration());
+            }
+        } catch (Throwable ignored) {
+        }
+        player.getCooldowns().addCooldown(stack.getItem(), ticks);
+        player.displayClientMessage(
+                Component.translatable("message.cheeserolepack.mine.safe_time"), true);
     }
 }

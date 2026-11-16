@@ -250,6 +250,13 @@ public class ClaymoreMineEntity extends Entity {
      * @return {@code true} 表示这次点击有效（新开始，或就是同一个人在继续）；{@code false} 表示已有别人在拆
      */
     public boolean startDefusing(ServerPlayer player) {
+        // 先判距离：不够就别进入拆除流程（否则下一 tick 的距离校验会失败，
+        // 玩家看到的是「拆除中断」，很容易以为是 bug）
+        if (player.distanceToSqr(this) > DEFUSE_MAX_DISTANCE * DEFUSE_MAX_DISTANCE) {
+            player.displayClientMessage(
+                    Component.translatable("message.cheeserolepack.claymore_mine.defuse_too_far"), true);
+            return false;
+        }
         if (defusingPlayer != null) {
             return defusingPlayer.equals(player.getUUID());
         }

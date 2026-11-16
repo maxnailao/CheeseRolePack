@@ -75,6 +75,11 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
         if (user.isSpectator() || !user.isAlive()) {
             return InteractionResultHolder.fail(stack);
         }
+        // 安全时间内不能开火：压入原版冷却（时长 = 安全时间剩余）
+        if (isInSafeTime(user)) {
+            applySafeTimeCooldown(user, stack);
+            return InteractionResultHolder.fail(stack);
+        }
         if (user.getCooldowns().isOnCooldown(stack.getItem())) {
             return InteractionResultHolder.fail(stack);
         }
@@ -133,6 +138,10 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
         ItemStack stack = user.getMainHandItem();
         if (!stack.is(ModItems.RPG7))
             return;
+        if (isInSafeTime(user)) {
+            applySafeTimeCooldown(user, stack);
+            return;
+        }
         if (user.getCooldowns().isOnCooldown(stack.getItem()))
             return;
         if (getAmmoCount(stack) >= MAX_AMMO)
@@ -174,5 +183,32 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
     @Override
     public int getBarColor(@NotNull ItemStack stack) {
         return 0xFFAA00;
+    }
+
+    /** 是否处于「安全时间」（SRE 的 SAFE_TIME 效果）。 */
+    public static boolean isInSafeTime(Player player) {
+        return player != null && player.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+    }
+
+    /**
+     * 安全时间内把 RPG-7 压进<b>原版物品冷却</b>（时长 = 安全时间剩余），并给出提示。
+     *
+     * <p>和地雷的保护同一套逻辑：物品栏上会出现原版冷却遮罩，玩家一眼看出「现在不能用」。</p>
+     */
+    public static void applySafeTimeCooldown(Player player, ItemStack stack) {
+        if (player == null || stack == null) {
+            return;
+        }
+        int ticks = 100;
+        try {
+            var instance = player.getEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+            if (instance != null) {
+                ticks = Math.max(20, instance.getDuration());
+            }
+        } catch (Throwable ignored) {
+        }
+        player.getCooldowns().addCooldown(stack.getItem(), ticks);
+        player.displayClientMessage(
+                Component.translatable("message.cheeserolepack.rpg7.safe_time"), true);
     }
 }

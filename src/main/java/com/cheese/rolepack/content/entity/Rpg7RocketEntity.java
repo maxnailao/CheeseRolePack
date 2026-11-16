@@ -170,6 +170,11 @@ public class Rpg7RocketEntity extends AbstractArrow {
         if (!stack.is(ModItems.RPG7)) {
             return;
         }
+        // 安全时间：服务端权威拦截（开火与装填都禁用），防止客户端绕过
+        if (Rpg7Item.isInSafeTime(player)) {
+            Rpg7Item.applySafeTimeCooldown(player, stack);
+            return;
+        }
         switch (action) {
             case SHOOT -> handleShoot(player, stack);
             case RELOAD -> handleReload(player, stack);

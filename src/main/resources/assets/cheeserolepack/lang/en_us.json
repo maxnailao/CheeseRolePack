@@ -68,5 +68,8 @@
   "star.story.role.better_gangster": "Among all of them, he was the one with the least talent...\n\nTo change his fate, the Gangster bought some equipment on the black market.\n\nThis time he will prove to everyone that he is no weakling - he too can complete the missions the organization hands down.",
   "replay.cheeserolepack.planted": "%s used %s",
   "replay.cheeserolepack.exploded": "%s's %s was detonated",
-  "replay.cheeserolepack.defused": "%s defused %s"
+  "replay.cheeserolepack.defused": "%s defused %s",
+  "message.cheeserolepack.claymore_mine.defuse_too_far": "Move closer to the Claymore Mine to defuse it",
+  "message.cheeserolepack.mine.safe_time": "Mines cannot be placed during safe time",
+  "message.cheeserolepack.rpg7.safe_time": "The RPG-7 cannot be used during safe time"
 }
