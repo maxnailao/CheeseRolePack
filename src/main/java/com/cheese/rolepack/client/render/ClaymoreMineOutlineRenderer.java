@@ -293,6 +293,26 @@ public final class ClaymoreMineOutlineRenderer {
         if (gameComponent == null || !gameComponent.isRunning()) {
             return false;
         }
+        // 死亡后的旁观者：开启「直觉」也能看到红框（观战 / 复盘用）
+        if (isDeadSpectatorWithInstinct(client.player)) {
+            return true;
+        }
         return gameComponent.isKillerTeam(client.player);
+    }
+
+    /** 死亡旁观者（旁观模式或已死亡）+ 已开启直觉。 */
+    private static boolean isDeadSpectatorWithInstinct(net.minecraft.world.entity.player.Player player) {
+        if (player == null) {
+            return false;
+        }
+        boolean deadOrSpectator = player.isSpectator() || !player.isAlive();
+        if (!deadOrSpectator) {
+            return false;
+        }
+        try {
+            return SREClient.isInstinctEnabled();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }

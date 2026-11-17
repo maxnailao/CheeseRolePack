@@ -74,7 +74,9 @@ public final class AntiPersonnelMineOutlineRenderer {
             return;
         }
         // 仅杀手阵营（含杀手中立）且开启了杀手透视时可见 —— 与 RKD 一致
-        if (!SREClient.gameComponent.isKillerTeam(client.player)) {
+        // 死亡后的旁观者：开启「直觉」也能看到红框（观战 / 复盘用）
+        boolean deadSpectatorWithInstinct = isDeadSpectatorWithInstinct(client.player);
+        if (!deadSpectatorWithInstinct && !SREClient.gameComponent.isKillerTeam(client.player)) {
             return;
         }
 
@@ -125,5 +127,21 @@ public final class AntiPersonnelMineOutlineRenderer {
         VoxelShape shape = ModBlocks.ANTI_PERSONNEL_MINE.defaultBlockState().getShape(level, pos);
         AABB local = shape.isEmpty() ? new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D) : shape.bounds();
         return local.move(mine.getX() - 0.5D, mine.getY(), mine.getZ() - 0.5D);
+    }
+
+    /** 死亡旁观者（旁观模式或已死亡）+ 已开启直觉。 */
+    private static boolean isDeadSpectatorWithInstinct(net.minecraft.world.entity.player.Player player) {
+        if (player == null) {
+            return false;
+        }
+        boolean deadOrSpectator = player.isSpectator() || !player.isAlive();
+        if (!deadOrSpectator) {
+            return false;
+        }
+        try {
+            return SREClient.isInstinctEnabled();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }
