@@ -87,7 +87,7 @@ public class ClaymoreMineEntity extends Entity {
     private static final double KILL_TAN_HALF_ANGLE = Math.tan(Math.toRadians(KILL_HALF_ANGLE_DEGREES));
 
     /** 拆除所需时长（5 秒 = 100 tick）。 */
-    public static final int DEFUSE_TICKS = 60;
+    public static final int DEFUSE_TICKS = 100;
 
     /** 拆除过程中每多少 tick 刷新一次 action bar 进度。 */
     public static final int DEFUSE_PROGRESS_INTERVAL = 10;
@@ -281,6 +281,11 @@ public class ClaymoreMineEntity extends Entity {
         this.defuseTicks = 0;
         player.displayClientMessage(
                 Component.translatable("message.cheeserolepack.claymore_mine.defuse_start"), true);
+        // 与 C4 拆除一致的起手音效
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                    SoundEvents.TRIPWIRE_CLICK_ON, net.minecraft.sounds.SoundSource.PLAYERS, 0.65F, 1.45F);
+        }
         return true;
     }
 
@@ -322,8 +327,11 @@ public class ClaymoreMineEntity extends Entity {
         }
 
         if (level instanceof ServerLevel serverLevel) {
+            // 与 C4 拆除成功一致：剪线 + 剪切两个音效
             serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
-                    SoundEvents.STONE_BUTTON_CLICK_ON, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 0.6F);
+                    SoundEvents.TRIPWIRE_CLICK_OFF, net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 1.2F);
+            serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                    SoundEvents.SHEEP_SHEAR, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
         }
         if (byPlayer != null) {
             byPlayer.displayClientMessage(
@@ -381,13 +389,20 @@ public class ClaymoreMineEntity extends Entity {
                 && defuser.level() == level                          // 仍在同一维度
                 && !defuser.isRemoved()
                 && defuser.isAlive()
-                && defuser.isShiftKeyDown()                          // 仍在蹲下
+                // 用拆弹钳拆除不再要求蹲下（直接拿着钳子右键即可，参考 C4 的拆除手感）
                 && defuser.distanceToSqr(this) <= DEFUSE_MAX_DISTANCE * DEFUSE_MAX_DISTANCE;
         if (!valid) {
             abortDefusing(defuser);
             return;
         }
         defuseTicks++;
+        // 与 C4 拆除一致的进度粒子：每 tick 一小簇 CRIT
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
+                this.getX(), this.getY() + 0.15D, this.getZ(), 4, 0.12D, 0.12D, 0.12D, 0.02D);
+        if (defuseTicks % 10 == 0) {
+            level.playSound(null, this.getX(), this.getY(), this.getZ(),
+                    SoundEvents.LEVER_CLICK, net.minecraft.sounds.SoundSource.PLAYERS, 0.35F, 1.8F);
+        }
         if (defuseTicks % DEFUSE_PROGRESS_INTERVAL == 0) {
             defuser.displayClientMessage(Component.translatable(
                     "message.cheeserolepack.claymore_mine.defusing", getDefusePercent()), true);

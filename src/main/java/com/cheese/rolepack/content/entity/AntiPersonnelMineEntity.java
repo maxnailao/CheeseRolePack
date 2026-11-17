@@ -65,7 +65,7 @@ public class AntiPersonnelMineEntity extends Entity {
     public static final int MAX_PER_PLAYER = 3;
 
     /** 用钳子拆除所需时长（3 秒 = 60 tick，与 SRE 的 {@code PliersDefuseManager} 一致）。 */
-    public static final int PLIERS_DEFUSE_TICKS = 60;
+    public static final int PLIERS_DEFUSE_TICKS = 200;
 
     /** 被钳子拆除后返还给所有者的金币（售价 100 的一半）。 */
     public static final int PLIERS_DEFUSE_REFUND = 50;
@@ -365,6 +365,11 @@ public class AntiPersonnelMineEntity extends Entity {
         this.defuseTicks = 0;
         player.displayClientMessage(
                 Component.translatable("message.cheeserolepack.anti_personnel_mine.defuse_start"), true);
+        // 与 C4 拆除一致的起手音效
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                    SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.PLAYERS, 0.65F, 1.45F);
+        }
         return true;
     }
 
@@ -406,12 +411,25 @@ public class AntiPersonnelMineEntity extends Entity {
             return;
         }
         defuseTicks++;
+        // 与 C4 拆除一致的进度粒子：每 tick 一小簇 CRIT
+        level.sendParticles(ParticleTypes.CRIT,
+                this.getX(), this.getY() + 0.15D, this.getZ(), 4, 0.12D, 0.12D, 0.12D, 0.02D);
+        if (defuseTicks % 10 == 0) {
+            level.playSound(null, this.getX(), this.getY(), this.getZ(),
+                    SoundEvents.LEVER_CLICK, SoundSource.PLAYERS, 0.35F, 1.8F);
+        }
         if (defuseTicks % PLIERS_DEFUSE_PROGRESS_INTERVAL == 0) {
             defuser.displayClientMessage(Component.translatable(
                     "message.cheeserolepack.anti_personnel_mine.defusing", getDefusePercent()), true);
         }
         if (defuseTicks >= PLIERS_DEFUSE_TICKS) {
-            // 拆除成功：静默移除（不爆炸），并把 50 金返还给地雷所有者
+            // 拆除成功：静默移除（不爆炸），并把返还金给所有者；音效与 C4 一致
+            if (level instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                        SoundEvents.TRIPWIRE_CLICK_OFF, SoundSource.PLAYERS, 0.9F, 1.2F);
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                        SoundEvents.SHEEP_SHEAR, SoundSource.PLAYERS, 1.0F, 1.2F);
+            }
             this.discard();
             BetterGangsterRoleData.refreshOwner(level, owner);
             refundOwnerOnDefuse(level);

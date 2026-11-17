@@ -41,7 +41,15 @@ public class ClaymoreMineEntityRenderer extends EntityRenderer<ClaymoreMineEntit
     public ClaymoreMineEntityRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.blockRenderer = context.getBlockRenderDispatcher();
-        this.shadowRadius = 0.25F;
+        // 不要影子：地雷是贴地的小物件，投影会让它看起来「浮在地上」
+        this.shadowRadius = 0.0F;
+        this.shadowStrength = 0.0F;
+    }
+
+    /** 兜底：即使别处改了 shadowRadius，这里也强制返回 0，彻底不画影子。 */
+    @Override
+    protected float getShadowRadius(ClaymoreMineEntity entity) {
+        return 0.0F;
     }
 
     @Override

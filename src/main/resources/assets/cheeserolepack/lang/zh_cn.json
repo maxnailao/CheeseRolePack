@@ -27,7 +27,7 @@
   "block.cheeserolepack.claymore_mine": "阔剑地雷",
   "death_reason.cheeserolepack.claymore_mine_explosion": "[阔剑地雷]",
   "message.cheeserolepack.claymore_mine.already_one": "场上已有 2 个阔剑地雷了",
-  "message.cheeserolepack.claymore_mine.defuse_start": "开始拆除阔剑地雷…保持下蹲，走开 1 格外或站起都会中断",
+  "message.cheeserolepack.claymore_mine.defuse_start": "开始拆除阔剑地雷…",
   "message.cheeserolepack.claymore_mine.defusing": "拆除中… %s%%",
   "message.cheeserolepack.claymore_mine.defuse_aborted": "拆除中断",
   "message.cheeserolepack.claymore_mine.defuse_done": "阔剑地雷已拆除",
@@ -74,5 +74,5 @@
   "message.cheeserolepack.anti_personnel_mine.retrieved": "已收回反人员地雷",
   "replay.cheeserolepack.retrieved": "%s 收回了 %s",
   "message.cheeserolepack.remote_detonate.instant": "已触发引爆！",
-  "message.cheeserolepack.mine.empty_blast_refund": "地雷空炸了，返还 %s 金"
+  "message.cheeserolepack.mine.empty_blast_refund": "地雷未命中，返还了 %s g"
 }
