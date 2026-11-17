@@ -76,7 +76,7 @@ public class BetterGangsterRole extends NormalRole {
     public static final int PSYCHO_MODE_PRICE = 400;
 
     /** 商店里「反人员地雷」（移植自 RKD）的价格（金币）。 */
-    public static final int AP_MINE_PRICE = 100;
+    public static final int AP_MINE_PRICE = 80;
 
     /** 商店里疯狂模式条目显示的名字（本模组自己的翻译键，避免和 SRE 原生疯狂模式混淆）。 */
     public static final String PSYCHO_MODE_NAME_KEY = "item.cheeserolepack.psycho_mode";
@@ -277,17 +277,7 @@ public class BetterGangsterRole extends NormalRole {
         // 阔剑地雷：消耗品，布设即消耗；被拆除时按同一个价格返还金币
         // 阔剑地雷：背包里已经有一枚就禁止购买（避免误买多个）
         entries.add(new ShopEntry(ModItems.CLAYMORE_MINE.getDefaultInstance(), ClaymoreMineItem.PRICE,
-                ShopEntry.Type.TOOL) {
-            @Override
-            public boolean canBuy(@NotNull Player player) {
-                if (ClaymoreMineItem.countInInventory(player) > 0) {
-                    setFailedMessage(Component
-                            .translatable("message.cheeserolepack.claymore_mine.already_owned"));
-                    return false;
-                }
-                return super.canBuy(player);
-            }
-        });
+                ShopEntry.Type.TOOL));
 
         // 反人员地雷（移植自 RKD）：布设即消耗，自动布防；100 金，不限购
         entries.add(new ShopEntry(ModItems.ANTI_PERSONNEL_MINE.getDefaultInstance(), AP_MINE_PRICE,
@@ -490,8 +480,14 @@ public class BetterGangsterRole extends NormalRole {
         if (ability != null) {
             ability.setCooldown(REMOTE_DETONATE_COOLDOWN_TICKS);
         }
-        player.displayClientMessage(Component.translatable(
-                "message.cheeserolepack.remote_detonate.ignited", String.format("%.1f", fuse / 20.0D)), true);
+        if (fuse <= 0) {
+            player.displayClientMessage(
+                    Component.translatable("message.cheeserolepack.remote_detonate.instant"), true);
+        } else {
+            player.displayClientMessage(Component.translatable(
+                    "message.cheeserolepack.remote_detonate.ignited",
+                    String.format("%.1f", fuse / 20.0D)), true);
+        }
         CheeseRolePack.LOGGER.info("[远程引爆] {} 点燃了一颗地雷（{} 格 → {} tick 前摇）",
                 player.getName().getString(), String.format("%.1f", distance), fuse);
         return true;
@@ -501,14 +497,12 @@ public class BetterGangsterRole extends NormalRole {
      * 前摇 tick：≤10 格 → 0.5 秒（10 tick）；10~50 格 → 2 秒（40 tick）；&gt;50 格 → 3 秒（60 tick）。
      */
     public static int fuseTicksFor(double distance) {
-        if (distance <= 10.0D) {
-            return 10;
-        }
+        // 50 格内：瞬间引爆（0 前摇；实际会被 igniteRemoteFuse 抬到 1 tick，即下一 tick 起爆）
         if (distance <= 50.0D) {
-            return 40;
+            return 0;
         }
-        // 50 格以外：2.5 秒（50 tick）
-        return 50;
+        // 50 格以外：1 秒前摇（20 tick）
+        return 20;
     }
 
     /**

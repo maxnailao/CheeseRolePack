@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -61,7 +62,7 @@ public class AntiPersonnelMineEntity extends Entity {
     public static final float EXPLOSION_RADIUS = 2.5F;
 
     /** 每个玩家场上最多几颗（本模组新增的限制）。 */
-    public static final int MAX_PER_PLAYER = 2;
+    public static final int MAX_PER_PLAYER = 3;
 
     /** 用钳子拆除所需时长（3 秒 = 60 tick，与 SRE 的 {@code PliersDefuseManager} 一致）。 */
     public static final int PLIERS_DEFUSE_TICKS = 60;
@@ -314,10 +315,10 @@ public class AntiPersonnelMineEntity extends Entity {
             }
         }
 
-        // 远程引爆且一个人都没炸到 → 返还售价的 80%（踩雷触发不返还）
-        com.cheese.rolepack.util.MineRefund.refundIfRemoteMissed(
-                level, owner, com.cheese.rolepack.role.BetterGangsterRole.AP_MINE_PRICE,
-                remoteDetonated, kills);
+        // 空炸（命中 0 人）→ 返还售价的 90%（无论是否远程引爆；命中数用 hit.size()，
+        // 所以「炸到带盾玩家但没炸死」不算空炸）
+        com.cheese.rolepack.util.MineRefund.refundIfEmptyBlast(
+                level, owner, com.cheese.rolepack.role.BetterGangsterRole.AP_MINE_PRICE, hit.size());
     }
 
     // === 钳子拆除（本模组新增，参考 SRE 的 PliersDefuseManager）===
@@ -452,13 +453,21 @@ public class AntiPersonnelMineEntity extends Entity {
      */
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
-        if (!player.getItemInHand(hand).is(org.agmas.noellesroles.init.ModItems.PLIERS)) {
-            return InteractionResult.PASS;
+        // ① 拆弹钳：任何人都能拆
+        if (player.getItemInHand(hand).is(org.agmas.noellesroles.init.ModItems.PLIERS)) {
+            if (this.level().isClientSide || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            return startDefusing(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
-        if (this.level().isClientSide || !(player instanceof ServerPlayer serverPlayer)) {
-            return InteractionResult.SUCCESS;
+        // ② 所有者蹲下 + 空手右键：收回背包（未布防/已布防都能收）
+        if (player.getItemInHand(hand).isEmpty() && player.isShiftKeyDown() && isOwner(player)) {
+            if (this.level().isClientSide || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            return retrieve(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
-        return startDefusing(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     // === 实体属性 ===
@@ -620,5 +629,37 @@ public class AntiPersonnelMineEntity extends Entity {
         return Component.literal("[").withStyle(white)
                 .append(Component.translatable(nameKey).withStyle(white))
                 .append(Component.literal("]").withStyle(white));
+    }
+
+    /** 是不是这颗地雷的所有者。 */
+    public boolean isOwner(@org.jetbrains.annotations.Nullable Player player) {
+        return owner != null && player != null && owner.equals(player.getUUID());
+    }
+
+    /** 所有者把反人员地雷收回背包（未布防/已布防都能收）。 */
+    public boolean retrieve(ServerPlayer player) {
+        if (!isOwner(player)) {
+            return false;
+        }
+        Level level = this.level();
+        ItemStack returned = new ItemStack(com.cheese.rolepack.init.ModItems.ANTI_PERSONNEL_MINE);
+        if (!player.getInventory().add(returned)) {
+            player.drop(returned, false);
+        }
+        this.discard();
+        if (level instanceof ServerLevel serverLevel) {
+            BetterGangsterRoleData.refreshOwner(serverLevel, owner);
+        }
+        player.displayClientMessage(
+                Component.translatable("message.cheeserolepack.anti_personnel_mine.retrieved"), true);
+        try {
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.retrieved",
+                            io.wifi.starrailexpress.api.replay.GameReplayUtils
+                                    .getReplayPlayerDisplayText(player, true),
+                            itemLabel("item.cheeserolepack.anti_personnel_mine")));
+        } catch (Throwable ignored) {
+        }
+        return true;
     }
 }

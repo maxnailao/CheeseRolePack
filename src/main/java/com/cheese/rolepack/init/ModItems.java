@@ -43,7 +43,7 @@ public final class ModItems {
      * - 空手右键地雷布防：布防后画出两条激光线，玩家踩进正面 0.8 格即引爆
      */
     public static final Item CLAYMORE_MINE = register("claymore_mine",
-            new ClaymoreMineItem(new Item.Properties().stacksTo(1)));
+            new ClaymoreMineItem(new Item.Properties().stacksTo(16)));
 
     /**
      * 反人员地雷（移植自 RKD 的 {@code noellesroles:landmine}）
@@ -52,7 +52,7 @@ public final class ModItems {
      * - 待发后玩家踩上地雷、再离开踩踏位置即引爆（球形 2.5 格）
      */
     public static final Item ANTI_PERSONNEL_MINE = register("anti_personnel_mine",
-            new AntiPersonnelMineItem(new Item.Properties().stacksTo(1)));
+            new AntiPersonnelMineItem(new Item.Properties().stacksTo(16)));
 
     private ModItems() {
     }

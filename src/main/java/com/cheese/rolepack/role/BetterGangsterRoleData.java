@@ -34,10 +34,10 @@ import java.util.UUID;
 public class BetterGangsterRoleData extends SimpleRoleData {
 
     /** 阔剑地雷的场上上限（与 {@code ClaymoreMineEntity.hasMine} 的判定一致）。 */
-    public static final int MAX_CLAYMORES = 1;
+    public static final int MAX_CLAYMORES = 2;
 
     /** 反人员地雷的场上上限。 */
-    public static final int MAX_AP_MINES = 2;
+    public static final int MAX_AP_MINES = 3;
 
     private static final String TAG_KNIFE_REWARD = "psychoKnifeReward";
     private static final String TAG_CLAYMORES = "claymores";

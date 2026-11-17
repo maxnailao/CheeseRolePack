@@ -10,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -55,22 +56,38 @@ public class ClaymoreMineEntity extends Entity {
     /** 布设后 2 秒才允许手动布防（40 tick）。 */
     public static final int ARM_DELAY_TICKS = 20;
 
-    public static final double TRIGGER_DEPTH = 0.8D;
+    public static final double TRIGGER_DEPTH = 1.0D;
 
     /** 引爆判定：正面那一层板的横向半宽。 */
     public static final double TRIGGER_HALF_WIDTH = 0.5D;
 
     /** 扇形杀伤的最大距离（格），对齐短管霰弹枪 {@code MIN_KILL_RANGE = 2.0}。 */
-    public static final double KILL_RANGE = 2.0D;
+    public static final double KILL_RANGE = 3.0D;
 
     /** 扇形杀伤的半张角（度），总张角 70°，对齐霰弹枪 {@code FAN_HALF_ANGLE_DEGREES = 35.0}。 */
-    public static final double KILL_HALF_ANGLE_DEGREES = 35.0D;
+    public static final double KILL_HALF_ANGLE_DEGREES = 37.5D;
+
+    /**
+     * 雷心核心杀伤半径（格）：除了正前方扇形，紧贴地雷的这一个球也算杀伤范围。
+     *
+     * <p>解决「站在雷正上方/侧面却因为扇形判定不到而不死」的问题 —— 现实里贴这么近肯定会被炸。</p>
+     */
+    public static final double CORE_KILL_RADIUS = 0.3D;
+
+    /**
+     * 杀伤体积在 Y 轴上的高度（格）：雷心向上/向下各 {@value #KILL_HEIGHT} 格的容差。
+     *
+     * <p>之前扇形判定只算水平（X/Z）距离，<b>完全没有 Y 轴</b>，
+     * 于是「站在雷正上方/正下方」「跳起来」「站在半砖上」这些情况会因为 depth≈0 而漏判，
+     * 表现就是「明明贴着雷却不死」。加上这个高度窗口后，垂直方向 1 格内都算杀伤范围。</p>
+     */
+    public static final double KILL_HEIGHT = 1.0D;
 
     /** 半张角的正切值，用于 {@code |lateral| <= depth * tan(35°)} 的快速判定。 */
     private static final double KILL_TAN_HALF_ANGLE = Math.tan(Math.toRadians(KILL_HALF_ANGLE_DEGREES));
 
     /** 拆除所需时长（5 秒 = 100 tick）。 */
-    public static final int DEFUSE_TICKS = 100;
+    public static final int DEFUSE_TICKS = 60;
 
     /** 拆除过程中每多少 tick 刷新一次 action bar 进度。 */
     public static final int DEFUSE_PROGRESS_INTERVAL = 10;
@@ -441,6 +458,8 @@ public class ClaymoreMineEntity extends Entity {
         Player killer = owner != null ? level.getPlayerByUUID(owner) : null;
         // 本次爆炸击杀人数：远程引爆「没炸到人」时才返还金币
         int kills = 0;
+        // 命中爆炸体积的玩家数（含带盾没死的）—— 空炸返还用它判断
+        int hits = 0;
         // 正面在水平面上的垂线（右手侧）
         double rightX = -front.z;
         double rightZ = front.x;
@@ -452,21 +471,41 @@ public class ClaymoreMineEntity extends Entity {
             double offsetX = player.getX() - center.x;
             double offsetZ = player.getZ() - center.z;
             double depth = offsetX * front.x + offsetZ * front.z;
-            if (depth <= 0.0D || depth > KILL_RANGE) {
-                continue;
-            }
             double lateral = Math.abs(offsetX * rightX + offsetZ * rightZ);
-            if (lateral > depth * KILL_TAN_HALF_ANGLE) {
+
+            // Y 轴窗口：雷心上下各 KILL_HEIGHT 格（解决「站在雷上/跳起来/踩半砖」漏判）
+            double deltaY = player.getY() - center.y;
+            if (Math.abs(deltaY) > KILL_HEIGHT) {
                 continue;
             }
+
+            // ① 正前方扇形：0 < 深度 <= KILL_RANGE 且横向不超出该深度的张角
+            boolean inFan = depth > 0.0D && depth <= KILL_RANGE
+                    && lateral <= depth * KILL_TAN_HALF_ANGLE;
+            // ② 雷心核心圆柱：水平距离 <= CORE_KILL_RADIUS（Y 已在上面限定），
+            //    这样正上方 / 正下方 / 侧面贴身都算，不再依赖 3D 球心距离
+            boolean inCore = (offsetX * offsetX + offsetZ * offsetZ)
+                    <= CORE_KILL_RADIUS * CORE_KILL_RADIUS;
+            // ③ 触发区本身：只要踩进触发矩形，就一定被炸。
+            //    必须加上这一条 —— 触发区是「深度 0~1.4 × 横向 ±0.5」的矩形，
+            //    而扇形在靠近雷心处非常窄（depth×0.767），侧面贴近会落在
+            //    「触发区内、扇形外」，表现就是「触发了却没死」。
+            boolean inTriggerBox = depth > 0.0D && depth <= TRIGGER_DEPTH
+                    && lateral <= TRIGGER_HALF_WIDTH;
+
+            if (!inFan && !inCore && !inTriggerBox) {
+                continue;
+            }
+            // 先记「命中」：哪怕对方带护盾没死，也算炸到人（不算空炸）
+            hits++;
             GameUtils.killPlayer(player, true, killer, CheeseRolePack.id("claymore_mine_explosion"));
             kills++;
         }
 
         // 远程引爆且一个人都没炸到 → 返还售价的 80%（踩雷触发不返还）
-        com.cheese.rolepack.util.MineRefund.refundIfRemoteMissed(
-                level, owner, com.cheese.rolepack.content.item.ClaymoreMineItem.PRICE,
-                remoteDetonated, kills);
+        // 空炸（命中 0 人）→ 返还售价的 90%（无论是否远程引爆）
+        com.cheese.rolepack.util.MineRefund.refundIfEmptyBlast(
+                level, owner, com.cheese.rolepack.content.item.ClaymoreMineItem.PRICE, hits);
     }
 
     /**
@@ -513,17 +552,26 @@ public class ClaymoreMineEntity extends Entity {
      */
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
-        if (!player.getItemInHand(hand).isEmpty()) {
-            return InteractionResult.PASS;
-        }
-        // —— 蹲下 + 空手：开始拆除（计时在服务端）——
-        if (player.isShiftKeyDown()) {
+        // ① 拆弹钳：任何人都能拆（主手或副手拿着钳子）
+        boolean pliers = player.getItemInHand(hand).is(org.agmas.noellesroles.init.ModItems.PLIERS)
+                || player.getOffhandItem().is(org.agmas.noellesroles.init.ModItems.PLIERS);
+        if (pliers) {
             if (this.level().isClientSide || !(player instanceof ServerPlayer serverPlayer)) {
                 return InteractionResult.SUCCESS;
             }
             return startDefusing(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
-        // —— 空手（不蹲）右键：布防 ——
+        if (!player.getItemInHand(hand).isEmpty()) {
+            return InteractionResult.PASS;
+        }
+        // ② 所有者蹲下 + 空手右键：把地雷收回背包（未布防/已布防都能收）
+        if (player.isShiftKeyDown() && isOwner(player)) {
+            if (this.level().isClientSide || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            return retrieve(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+        }
+        // ③ 空手（不蹲下）：布防
         if (isArmed()) {
             return InteractionResult.PASS;
         }
@@ -601,7 +649,7 @@ public class ClaymoreMineEntity extends Entity {
 
     /** 某玩家场上是否还有一颗他布设的地雷。 */
     public static boolean hasMine(@Nullable Player player) {
-        return countOwned(player) > 0;
+        return countOwned(player) >= 2;
     }
 
     /** 某玩家场上还活着的地雷数量（HUD 计数 / 上限判定都用它）。 */
@@ -689,5 +737,41 @@ public class ClaymoreMineEntity extends Entity {
         return Component.literal("[").withStyle(white)
                 .append(Component.translatable(nameKey).withStyle(white))
                 .append(Component.literal("]").withStyle(white));
+    }
+
+    /** 是不是这颗地雷的所有者。 */
+    public boolean isOwner(@org.jetbrains.annotations.Nullable Player player) {
+        return owner != null && player != null && owner.equals(player.getUUID());
+    }
+
+    /**
+     * 所有者把地雷<b>收回背包</b>（等价于撤销布设，不消耗物品）。
+     *
+     * <p>无论未布防还是已布防都能收；背包满时直接掉在脚下，不会凭空消失。</p>
+     */
+    public boolean retrieve(ServerPlayer player) {
+        if (!isOwner(player)) {
+            return false;
+        }
+        Level level = this.level();
+        ItemStack returned = new ItemStack(com.cheese.rolepack.init.ModItems.CLAYMORE_MINE);
+        if (!player.getInventory().add(returned)) {
+            player.drop(returned, false);
+        }
+        this.discard();
+        if (level instanceof ServerLevel serverLevel) {
+            BetterGangsterRoleData.refreshOwner(serverLevel, owner);
+        }
+        player.displayClientMessage(
+                Component.translatable("message.cheeserolepack.claymore_mine.retrieved"), true);
+        try {
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.cheeserolepack.retrieved",
+                            io.wifi.starrailexpress.api.replay.GameReplayUtils
+                                    .getReplayPlayerDisplayText(player, true),
+                            itemLabel("item.cheeserolepack.claymore_mine")));
+        } catch (Throwable ignored) {
+        }
+        return true;
     }
 }
