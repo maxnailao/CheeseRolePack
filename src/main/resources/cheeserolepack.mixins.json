@@ -6,7 +6,8 @@
     "defaultRequire": 1
   },
   "client": [
-    "client.MouseHandlerMixin"
+    "client.MouseHandlerMixin",
+    "client.RatatouillePsychoDroneMixin"
   ],
   "mixins": [
     "GameUtilsReviveMixin"

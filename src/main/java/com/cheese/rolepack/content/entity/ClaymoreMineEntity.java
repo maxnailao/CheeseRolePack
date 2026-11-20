@@ -133,6 +133,7 @@ public class ClaymoreMineEntity extends Entity {
     public ClaymoreMineEntity(EntityType<? extends ClaymoreMineEntity> entityType, Level level) {
         super(entityType, level);
         // 地雷不动、也不该被方块碰撞推来推去
+        // 不被碰撞箱推挤，也不要被别的实体撞出去
         this.noPhysics = true;
         this.setNoGravity(true);
     }
@@ -789,4 +790,6 @@ public class ClaymoreMineEntity extends Entity {
         }
         return true;
     }
+
+
 }

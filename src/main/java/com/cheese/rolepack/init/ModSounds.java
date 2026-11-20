@@ -17,10 +17,34 @@ import net.minecraft.sounds.SoundEvent;
  */
 public final class ModSounds {
 
-    /** RPG-7 发射音效（由服务端在射击时播放）。 */
-    public static final SoundEvent RPG7_SHOOT = register("rpg7_shoot");
+    /** RPG-7 发射音效的可听半径（格）—— 必须声明在 {@link #RPG7_SHOOT} 之前。 */
+    public static final float RPG7_SHOOT_RANGE = 512.0F;
+
+    /**
+     * RPG-7 发射音效（由服务端在射击时播放）。
+     *
+     * <p><b>全场可闻</b>：用 {@link SoundEvent#createFixedRangeEvent} 把可听半径固定为
+     * {@value #RPG7_SHOOT_RANGE} 格（狙击枪那种「整个地图都听到」的效果），
+     * 而不是按音量推算出来的十几格。</p>
+     */
+    public static final SoundEvent RPG7_SHOOT = registerFixed("rpg7_shoot", RPG7_SHOOT_RANGE);
+
+    /**
+     * 更好的悍匪「疯狂模式」专属背景音乐（客户端本地播放，流式加载）。
+     *
+     * <p>对应 {@code assets/cheeserolepack/sounds/music/gangster_psycho.ogg}
+     * 与 {@code sounds.json} 里的 {@code "music_gangster_psycho"}。</p>
+     */
+    public static final SoundEvent GANGSTER_PSYCHO = register("music_gangster_psycho");
 
     private ModSounds() {
+    }
+
+    /** 注册一个「可听半径固定」的音效（用于狙击枪式的全场音效）。 */
+    private static SoundEvent registerFixed(String path, float range) {
+        ResourceLocation id = CheeseRolePack.id(path);
+        return Registry.register(BuiltInRegistries.SOUND_EVENT, id,
+                SoundEvent.createFixedRangeEvent(id, range));
     }
 
     private static SoundEvent register(String path) {

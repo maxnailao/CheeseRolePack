@@ -203,8 +203,10 @@ public class Rpg7RocketEntity extends AbstractArrow {
         rocket.shoot(look.x, look.y, look.z, Rpg7Item.ROCKET_SPEED, 0);
         level.addFreshEntity(rocket);
 
+        // 狙击枪式的全场音效：可听半径已在 ModSounds 里固定为 512 格，
+        // 这里再把音量拉高（4.0 = 远距离也够响），音调略降一点更像「大枪」。
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                ModSounds.RPG7_SHOOT, SoundSource.PLAYERS, 1.0f, 1.0f);
+                ModSounds.RPG7_SHOOT, SoundSource.PLAYERS, 4.0F, 0.9F);
     }
 
     private static void handleReload(ServerPlayer player, ItemStack stack) {

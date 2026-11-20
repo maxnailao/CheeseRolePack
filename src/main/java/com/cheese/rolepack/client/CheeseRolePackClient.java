@@ -12,5 +12,8 @@ public class CheeseRolePackClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         CheeseRolePackClientHooks.register();
+        // 更好的悍匪「疯狂模式」专属音乐：每 tick 检查进入/退出并切换播放
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK
+                .register(client -> GangsterPsychoMusic.tick());
     }
 }

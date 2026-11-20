@@ -285,7 +285,10 @@ public class BetterGangsterRole extends NormalRole {
 
         // 疯狂模式：图标借用 SRE 的疯狂模式物品，名字换成本模组自己的翻译键
         // 图标改用 RPG-7（本模组的物品），不再用 SRE 的疯狂模式物品
-        ItemStack psychoIcon = ModItems.RPG7.getDefaultInstance();
+        ItemStack psychoIcon = TMMItems.PSYCHO_MODE.getDefaultInstance();
+        // ↑ 必须用 SRE 官方的疯狂模式物品：冷却（SREConfig.psychoModeCooldown）
+        //   和「给别人上全局冷却」都记在这个物品上，用别的物品做图标会让
+        //   商店按那个物品判断冷却 → 显示成没有 CD。
         psychoIcon.set(DataComponents.CUSTOM_NAME, Component.translatable(PSYCHO_MODE_NAME_KEY));
         entries.add(new ShopEntry(psychoIcon, PSYCHO_MODE_PRICE, ShopEntry.Type.WEAPON) {
             @Override
@@ -327,7 +330,7 @@ public class BetterGangsterRole extends NormalRole {
         ShopEntry psycho = null;
         for (java.util.Iterator<ShopEntry> it = rest.iterator(); it.hasNext();) {
             ShopEntry entry = it.next();
-            if (entry.stack().is(ModItems.RPG7)) {
+            if (entry.stack().is(TMMItems.PSYCHO_MODE)) {
                 psycho = entry;
                 it.remove();
                 break;
@@ -556,5 +559,20 @@ public class BetterGangsterRole extends NormalRole {
         if (data != null) {
             data.setPsychoKnifeRewardGranted(false);
         }
+    }
+
+    /**
+     * 疯狂模式下的皮肤：用 {@code temp/hanfei.png}（悍匪皮肤，64×64）。
+     *
+     * <p>SRE 会在玩家进入疯狂模式时调用本方法替换皮肤
+     * （{@code PlayerEntityRendererMixin} 里 {@code role.getPsychoSkin(...)}），
+     * 返回 {@code null} 则回退到 SRE 的默认 {@code textures/entity/psycho.png}。</p>
+     *
+     * <p>注意路径是<b>完整纹理路径</b>（含 {@code textures/} 与 {@code .png}），
+     * 与 SRE 其它职业的写法一致。</p>
+     */
+    @Override
+    public ResourceLocation getPsychoSkin(Player player, boolean isSlim) {
+        return CheeseRolePack.id("textures/entity/custom_psycho/hanfei.png");
     }
 }

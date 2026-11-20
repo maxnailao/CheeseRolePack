@@ -30,6 +30,15 @@ import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
  */
 public final class BetterGangsterHud {
 
+    /**
+     * 左上角职业图标（盖住原版阵营心情图标）。
+     *
+     * <p>尺寸必须 <b>14 × 17</b>，因为 SRE 的 {@code HudMoodRenderer} 就是按
+     * {@code blitSprite(moodIcon, 5, 6, 14, 17)} 画的，我们覆盖在同一位置。</p>
+     */
+    public static final net.minecraft.resources.ResourceLocation ROLE_ICON =
+            com.cheese.rolepack.CheeseRolePack.id("textures/gui/role_icon/better_gangster.png");
+
     /** 准星射线的最远距离（与服务端校验的 64 格一致）。 */
     private static final double PICK_DISTANCE = 64.0D;
 
@@ -77,6 +86,9 @@ public final class BetterGangsterHud {
             context.drawString(font, apMineText, right - font.width(apMineText), y2, colorApMine);
             context.drawString(font, keyHintText, right - font.width(keyHintText), y3, colorKeyHint);
 
+            // —— 左上角职业图标：盖在 SRE 的阵营心情图标之上（5,6 14×17 同一位置）——
+            drawRoleIcon(context);
+
             // —— 准星对准地雷时，在准星下方提示「按下 X 主动引爆」——
             if (isAimingAtMine(client)) {
                 Component hint = Component.translatable(
@@ -120,5 +132,33 @@ public final class BetterGangsterHud {
             // 忽略：拿不到就用占位符
         }
         return Component.translatable("hud.cheeserolepack.green.key_unknown");
+    }
+
+    /**
+     * 在左上角 (5, 6) 画 14×17 的职业图标，盖住 SRE 原版的阵营心情图标。
+     *
+     * <p><b>只在贴图存在时才画</b>：{@code getResource(...).isPresent()} 判断，
+     * 这样你还没画/没放图时不会出现紫黑“缺失贴图”方块。</p>
+     */
+    private static void drawRoleIcon(io.wifi.utils.client.betterrender.FakeGuiGraphics graphics) {
+        try {
+            if (!isTexturePresent(ROLE_ICON)) {
+                return;
+            }
+            // blit(loc, x, y, u, v, w, h, texWidth, texHeight)
+            graphics.blit(ROLE_ICON, 5, 6, 0.0F, 0.0F, 14, 17, 14, 17);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 贴图是否存在（资源包里有这个文件才返回 true）。 */
+    private static boolean isTexturePresent(net.minecraft.resources.ResourceLocation id) {
+        try {
+            Minecraft client = Minecraft.getInstance();
+            return client.getResourceManager() != null
+                    && client.getResourceManager().getResource(id).isPresent();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }
