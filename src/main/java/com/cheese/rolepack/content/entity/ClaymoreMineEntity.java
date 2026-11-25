@@ -52,38 +52,38 @@ import java.util.UUID;
  */
 public class ClaymoreMineEntity extends Entity {
 
-    /** 引爆判定：玩家必须落在正面方向 0 ~ 0.8 格的这一层里。 */
-    /** 布设后 2 秒才允许手动布防（40 tick）。 */
-    public static final int ARM_DELAY_TICKS = 20;
-
+    /** 触发判定：以雷心为基准、沿雷朝向前方 0 ~ {@value #TRIGGER_DEPTH} 格的一个矩形。 */
     public static final double TRIGGER_DEPTH = 1.0D;
 
-    /** 引爆判定：正面那一层板的横向半宽。 */
+    /** 触发矩形垂直于朝向方向上的半宽（格）。 */
     public static final double TRIGGER_HALF_WIDTH = 0.5D;
 
-    /** 扇形杀伤的最大距离（格），对齐短管霰弹枪 {@code MIN_KILL_RANGE = 2.0}。 */
+    /** 扇形杀伤的半径（格）。 */
     public static final double KILL_RANGE = 3.0D;
 
-    /** 扇形杀伤的半张角（度），总张角 70°，对齐霰弹枪 {@code FAN_HALF_ANGLE_DEGREES = 35.0}。 */
+    /** 扇形杀伤的<b>半</b>张角（度）—— 总张角 75°。 */
     public static final double KILL_HALF_ANGLE_DEGREES = 37.5D;
 
-    /**
-     * 雷心核心杀伤半径（格）：除了正前方扇形，紧贴地雷的这一个球也算杀伤范围。
-     *
-     * <p>解决「站在雷正上方/侧面却因为扇形判定不到而不死」的问题 —— 现实里贴这么近肯定会被炸。</p>
-     */
+    /** 雷心核心杀伤半径（格）：站在雷正上方 / 正下方 / 正后方时用 3D 距离判定。 */
     public static final double CORE_KILL_RADIUS = 0.3D;
 
-    /**
-     * 杀伤体积在 Y 轴上的高度（格）：雷心向上/向下各 {@value #KILL_HEIGHT} 格的容差。
-     *
-     * <p>之前扇形判定只算水平（X/Z）距离，<b>完全没有 Y 轴</b>，
-     * 于是「站在雷正上方/正下方」「跳起来」「站在半砖上」这些情况会因为 depth≈0 而漏判，
-     * 表现就是「明明贴着雷却不死」。加上这个高度窗口后，垂直方向 1 格内都算杀伤范围。</p>
-     */
-    public static final double KILL_HEIGHT = 1.0D;
+    /** 布防延迟（tick）：放置后 1 秒自动布防。 */
+    public static final int ARM_DELAY_TICKS = 20;
 
-    /** 半张角的正切值，用于 {@code |lateral| <= depth * tan(35°)} 的快速判定。 */
+    /**
+     * 杀伤体在 Y 轴上的<b>上方</b>拉伸量（格）。
+     *
+     * <p>杀伤体的完整定义：<b>水平扇形沿 Y 轴拉伸成的三维实体</b>——
+     * 扇形上方 {@value #KILL_HEIGHT_ABOVE} 格、下方 {@value #KILL_HEIGHT_BELOW} 格（不对称）。</p>
+     */
+    public static final double KILL_HEIGHT_ABOVE = 1.0D;
+
+    /**
+     * 杀伤体在 Y 轴上的<b>下方</b>拉伸量（格）——
+     * 与 {@link #KILL_HEIGHT_ABOVE} 组成不对称拉伸（上 1.0 / 下 0.2）。</p>
+     */
+    public static final double KILL_HEIGHT_BELOW = 0.2D;
+
     private static final double KILL_TAN_HALF_ANGLE = Math.tan(Math.toRadians(KILL_HALF_ANGLE_DEGREES));
 
     /** 拆除所需时长（5 秒 = 100 tick）。 */
@@ -489,9 +489,17 @@ public class ClaymoreMineEntity extends Entity {
             double depth = offsetX * front.x + offsetZ * front.z;
             double lateral = Math.abs(offsetX * rightX + offsetZ * rightZ);
 
-            // Y 轴窗口：雷心上下各 KILL_HEIGHT 格（解决「站在雷上/跳起来/踩半砖」漏判）
-            double deltaY = player.getY() - center.y;
-            if (Math.abs(deltaY) > KILL_HEIGHT) {
+            // 扇形沿 Y 轴拉伸：扇形平面上方 KILL_HEIGHT_ABOVE（1.0 格）、下方 KILL_HEIGHT_BELOW（0.2 格）。
+            //
+            // 关键：这里判的是<b>玩家身体包围盒</b>与拉伸体的相交，而不是脚底点。
+            // 以前用 player.getY()（脚底）单点判定 → 雷放在高一格的方块上时，
+            // 玩家脚底在雷心下方 1.0 格（超出 -0.2 的下界）会被判成"不在范围"，
+            // 但他的身体（1.8 格高）明明穿过了拉伸体 → 表现就是"渲染穿过我了却没死"。
+            double volumeBottom = center.y - KILL_HEIGHT_BELOW;
+            double volumeTop = center.y + KILL_HEIGHT_ABOVE;
+            double feetY = player.getY();
+            double headY = feetY + player.getBbHeight();
+            if (feetY > volumeTop || headY < volumeBottom) {
                 continue;
             }
 

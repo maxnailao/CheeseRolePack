@@ -71,7 +71,7 @@ public final class GangsterPsychoMusic {
             lastActive = active;
             CheeseRolePack.LOGGER.info(
                     "[疯狂音乐] 状态变化 active={} | 职业={} | psychoTicks={} | localPsychoActive={}",
-                    active, roleIdOf(client), psychoTicksOf(client), safeLocalPsycho());
+                    active, roleIdOf(client), psychoTicksOf(client.player), localPsychoFlag());
         }
 
         if (active) {
@@ -100,29 +100,78 @@ public final class GangsterPsychoMusic {
         }
     }
 
-    /** 本地玩家此刻是否应该播放专属音乐。 */
+    /**
+     * 此刻是否应该由我们接管疯狂模式音乐。
+     *
+     * <p><b>全局判定</b>：只要这个世界里有<b>任意一个</b>「更好的悍匪」处于疯狂模式就算，
+     * 不要求是本地玩家。原因：原版 drone 的谓词是
+     * {@code player -> gameComponent.isPsychoActive()}，是<b>全房间</b>播的，
+     * 所以死亡旁观者、以及房间里的其他人也一直在听原版 drone。要换成我们的音乐，
+     * 判定的范围必须和原版一致。</p>
+     */
     public static boolean isActive(Minecraft client) {
         if (client == null || client.player == null || SREClient.gameComponent == null) {
             return false;
         }
         try {
-            if (!isBetterGangster(client)) {
-                return false;
-            }
-            if (psychoTicksOf(client) > 0) {
+            // 1) 自己就是更好的悍匪 + 在疯狂模式
+            if (isBetterGangsterRole(client.player) && isPsycho(client.player)) {
                 return true;
             }
-            return safeLocalPsycho();
+            // 2) 房间里有别的更好的悍匪在疯狂模式（死亡旁观 / 其他幸存者都算）
+            return anyBetterGangsterPsycho(client);
         } catch (Throwable t) {
             CheeseRolePack.LOGGER.warn("[疯狂音乐] 判定异常", t);
             return false;
         }
     }
 
-    /** 本地玩家是不是更好的悍匪（角色 id 或路径任一匹配都算）。 */
-    private static boolean isBetterGangster(Minecraft client) {
+    /**
+     * 遍历房间内所有玩家，找「更好的悍匪 + 疯狂模式」。
+     *
+     * <p><b>不越界</b>：只认更好的悍匪。职业信息拿不到、或者疯狂的是别的职业
+     * （魔术师假疯狂等）时一律不接管，原版 drone 保持不动。</p>
+     */
+    private static boolean anyBetterGangsterPsycho(Minecraft client) {
+        if (client.level == null) {
+            return false;
+        }
         try {
-            var role = SREClient.gameComponent.getRole(client.player);
+            for (var other : client.level.players()) {
+                if (other == null) {
+                    continue;
+                }
+                if (!isBetterGangsterRole(other)) {
+                    continue;
+                }
+                if (isPsycho(other)) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+            // 换维度瞬间等异常，当作没有
+        }
+        return false;
+    }
+
+    /** 某个玩家的职业 id（拿不到返回 null）。 */
+    private static net.minecraft.resources.ResourceLocation roleIdOf(
+            net.minecraft.world.entity.player.Player player) {
+        try {
+            var role = SREClient.gameComponent.getRole(player);
+            return role == null ? null : role.identifier();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    /** 某个玩家是不是更好的悍匪（角色 id 或路径任一匹配都算）。 */
+    private static boolean isBetterGangsterRole(net.minecraft.world.entity.player.Player player) {
+        try {
+            if (SREClient.gameComponent == null || player == null) {
+                return false;
+            }
+            var role = SREClient.gameComponent.getRole(player);
             if (role == null || role.identifier() == null) {
                 return false;
             }
@@ -135,19 +184,41 @@ public final class GangsterPsychoMusic {
         }
     }
 
-    private static int psychoTicksOf(Minecraft client) {
-        try {
-            return SREPlayerPsychoComponent.KEY.get(client.player).psychoTicks;
-        } catch (Throwable ignored) {
-            return 0;
+    /**
+     * 某个玩家是否处于疯狂模式。
+     *
+     * <p>不直接信任 {@code psychoTicks}（别人身上的组件在客户端不一定同步），
+     * 优先用 SRE 自己维护的 {@code SREClient.PLAYER_PSYCHO_CACHE}。</p>
+     */
+    private static boolean isPsycho(net.minecraft.world.entity.player.Player player) {
+        if (player == null) {
+            return false;
         }
+        try {
+            Boolean cached = SREClient.PLAYER_PSYCHO_CACHE.get(player.getUUID());
+            if (cached != null && cached) {
+                return true;
+            }
+        } catch (Throwable ignored) {
+            // 缓存不可用，退回组件
+        }
+        if (player == Minecraft.getInstance().player) {
+            try {
+                if (SREClient.localPlayerPsychoActive) {
+                    return true;
+                }
+            } catch (Throwable ignored) {
+            }
+            return psychoTicksOf(player) > 0;
+        }
+        return psychoTicksOf(player) > 0;
     }
 
-    private static boolean safeLocalPsycho() {
+    private static int psychoTicksOf(net.minecraft.world.entity.player.Player player) {
         try {
-            return SREClient.localPlayerPsychoActive;
+            return SREPlayerPsychoComponent.KEY.get(player).psychoTicks;
         } catch (Throwable ignored) {
-            return false;
+            return 0;
         }
     }
 
@@ -241,6 +312,15 @@ public final class GangsterPsychoMusic {
             }
         } catch (Throwable ignored) {
             // 声音管理器不可用，忽略
+        }
+    }
+
+    /** 诊断用：SRE 缓存的"本地玩家在疯狂"标志。 */
+    private static boolean localPsychoFlag() {
+        try {
+            return SREClient.localPlayerPsychoActive;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 }
