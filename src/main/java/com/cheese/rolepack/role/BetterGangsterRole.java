@@ -75,6 +75,16 @@ public class BetterGangsterRole extends NormalRole {
     /** 商店里「疯狂模式」的价格（金币）。 */
     public static final int PSYCHO_MODE_PRICE = 400;
 
+    /** 购买疯狂模式所需的最小背包空位（要发 RPG-7 + 弹药两件）。 */
+    public static final int PSYCHO_MODE_REQUIRED_SLOTS = 2;
+
+    /**
+     * 物品栏（快捷栏 / hotbar）槽位数：vanilla 9 格，即 {@code Inventory} 的 0~8 号槽。
+     *
+     * <p>需求只针对「物品栏」，主背包（9~35 号槽）不计入。</p>
+     */
+    private static final int HOTBAR_SLOTS = 9;
+
     /** 商店里「反人员地雷」（移植自 RKD）的价格（金币）。 */
     public static final int AP_MINE_PRICE = 80;
 
@@ -295,6 +305,16 @@ public class BetterGangsterRole extends NormalRole {
             public boolean onBuy(@NotNull Player player) {
                 // 走 SRE 官方入口：加冷却 + startPsycho_time + 记回放。
                 // 返回 false 时商店不会扣钱（已用 javap 核对 SREPlayerShopComponent 的购买流程）。
+                int freeSlots = freeHotbarSlots(player);
+                CheeseRolePack.LOGGER.info("[疯狂模式] 购买检查：物品栏空位={} 需要={}",
+                        freeSlots, PSYCHO_MODE_REQUIRED_SLOTS);
+                if (freeSlots < PSYCHO_MODE_REQUIRED_SLOTS) {
+                    // 空位不足 → 直接拒绝购买（返回 false 商店不扣钱），避免事后把 RPG-7/弹药丢地上
+                    player.displayClientMessage(Component.translatable(
+                            "message.cheeserolepack.psycho_mode.not_enough_space",
+                            PSYCHO_MODE_REQUIRED_SLOTS), true);
+                    return false;
+                }
                 return SREPlayerShopComponent.usePsychoMode_time(player,
                         GameConstants.getPsychoTimer(), GameConstants.getPsychoModeArmour());
             }
@@ -574,5 +594,27 @@ public class BetterGangsterRole extends NormalRole {
     @Override
     public ResourceLocation getPsychoSkin(Player player, boolean isSlim) {
         return CheeseRolePack.id("textures/entity/custom_psycho/hanfei.png");
+    }
+
+    /**
+     * 统计<b>物品栏（快捷栏）</b>的空格数。
+     *
+     * <p>只看 {@value #HOTBAR_SLOTS} 个快捷栏槽位（{@code Inventory} 的 0~8 号）。
+     * 主背包（9~35）与盔甲/副手都不计入 —— 需求里的"背包"指的就是物品栏。</p>
+     */
+    private static int freeHotbarSlots(Player player) {
+        int free = 0;
+        try {
+            var inventory = player.getInventory();
+            int limit = Math.min(HOTBAR_SLOTS, inventory.getContainerSize());
+            for (int i = 0; i < limit; i++) {
+                if (inventory.getItem(i).isEmpty()) {
+                    free++;
+                }
+            }
+        } catch (Throwable ignored) {
+            // 拿不到物品栏就当没有空位，避免误扣钱
+        }
+        return free;
     }
 }

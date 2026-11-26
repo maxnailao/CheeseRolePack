@@ -23,7 +23,7 @@
   "message.cheeserolepack.rpg7.empty": "No rocket loaded",
   "death_reason.cheeserolepack.rpg_explosion": "[RPG-7]",
   "item.cheeserolepack.claymore_mine": "Claymore Mine",
-  "item.cheeserolepack.claymore_mine.tooltip": "Hold right-click for 0.5s to plant at your feet (consumed on placement)\nAfter 1s, right-click with an empty hand to arm - two laser lines appear\nOnce armed, anyone entering the 1-block front zone detonates it (3-block / 75-degree fan + a 0.3-block core radius, with vertical tolerance from 0.5 block below to 1 block above)\nRight-click with pliers for 5s to defuse, refunding 50 coins",
+  "item.cheeserolepack.claymore_mine.tooltip": "Hold right-click for 0.5s to plant at your feet (consumed on placement)\nAfter 1s, right-click to arm instantly; auto-arms 3s after placement\nOnce armed, anyone entering the 1-block front zone detonates it (3-block / 75-degree fan + a 0.3-block core radius, with vertical tolerance from 0.2 block below to 1 block above)\nRight-click with pliers for 5s to defuse, refunding 50 coins",
   "block.cheeserolepack.claymore_mine": "Claymore Mine",
   "death_reason.cheeserolepack.claymore_mine_explosion": "[Claymore Mine]",
   "message.cheeserolepack.claymore_mine.already_one": "You already have 2 claymore mines deployed",
@@ -74,5 +74,6 @@
   "message.cheeserolepack.anti_personnel_mine.retrieved": "Anti-Personnel Mine retrieved",
   "replay.cheeserolepack.retrieved": "%s retrieved %s",
   "message.cheeserolepack.remote_detonate.instant": "Detonated!",
-  "message.cheeserolepack.mine.empty_blast_refund": "The mine hit nobody - refunded %s coins"
+  "message.cheeserolepack.mine.empty_blast_refund": "The mine hit nobody - refunded %s coins",
+  "message.cheeserolepack.psycho_mode.not_enough_space": "You need at least %s free hotbar slots to use psycho mode"
 }

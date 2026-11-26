@@ -67,8 +67,11 @@ public class ClaymoreMineEntity extends Entity {
     /** 雷心核心杀伤半径（格）：站在雷正上方 / 正下方 / 正后方时用 3D 距离判定。 */
     public static final double CORE_KILL_RADIUS = 0.3D;
 
-    /** 布防延迟（tick）：放置后 1 秒自动布防。 */
+    /** 放好后最早可手动激活的时间（tick）：1 秒。 */
     public static final int ARM_DELAY_TICKS = 20;
+
+    /** 未手动激活时，放置后自动布防的时间（tick）：3 秒。 */
+    public static final int AUTO_ARM_TICKS = 60;
 
     /**
      * 杀伤体在 Y 轴上的<b>上方</b>拉伸量（格）。
@@ -371,6 +374,10 @@ public class ClaymoreMineEntity extends Entity {
             }
         }
         tickDefusing(serverLevel);
+        // 未手动激活 → 放置满 3 秒自动布防
+        if (!isArmed() && this.tickCount >= AUTO_ARM_TICKS) {
+            arm();
+        }
         if (isArmed()) {
             tickTrigger(serverLevel);
         }
